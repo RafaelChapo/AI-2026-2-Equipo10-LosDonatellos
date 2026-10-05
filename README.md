@@ -37,6 +37,6 @@ No requiere instalacion ni dependencias locales de backend:
   * Consolidacion de toda la aplicacion en un unico archivo plano (index.html) y rediseño minimalista de la interfaz de usuario.
 
 ## 6. Integrantes y Roles
-* **Rafael del Piero Chapoñan Chunga:** Arquitectura del gemelo digital, integracion del agente de utilidad y despliegue en GitHub Pages.
+* **Rafael del Piero Chapoñan Chunga:** Diseño del gemelo digital, integración del agente de utilidad y despliegue en GitHub Pages.
 * **Alanis Zuzet Crisanto Alzamora:** Modelado matematico fisiologico, balance calorico y calibracion de ponderadores de utilidad (alfa, beta, gamma).
-* **Sebastian Paolo Tapia Garcia:** Diseño de la interfaz de usuario, interactividad de controles y generacion de graficos con Chart.js e implementacion de agentes de referencia (Modo Base y Reflejo Simple).
+* **Sebastian Paolo Tapia Garcia:** Diseño de la interfaz de usuario, interactividad de controles e implementacion de agentes de referencia (Modo Base y Reflejo Simple).
