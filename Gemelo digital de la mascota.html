@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Michi · Gemelo digital de alimentador inteligente</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ===== Variables y tema ===== */
+:root {
+  --bg: #f5f6fa; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+  --accent: #4f46e5; --accent-ink: #ffffff; --good: #10b981; --good-bg: #d1fae5; --warn: #f59e0b; --bad: #ef4444; --info: #3b82f6;
+  --fur: #f2b36a; --fur-dark: #d98f3e;
+  --radius: 14px; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(17,24,39,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1117; --card: #171a23; --text: #e5e7eb; --muted: #9aa3b2; --line: #272b38;
+    --accent: #818cf8; --accent-ink: #0f1117; --good-bg: rgba(16,185,129,.18); --shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+}
+
+/* ===== Base ===== */
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+h2 { margin: 0 0 10px; font-size: 1.05rem; }
+small { display: block; color: var(--muted); font-weight: 400; font-size: .76rem; }
+.hint { color: var(--muted); font-size: .85rem; margin: 8px 0 0; }
+[hidden] { display: none !important; }
+
+/* ===== Layout ===== */
+header.top { padding: 28px clamp(16px, 4vw, 40px) 4px; }
+header.top h1 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 2rem); letter-spacing: -.01em; }
+header.top p { margin: .4rem 0 0; color: var(--muted); max-width: 72ch; }
+.layout { display: grid; grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); gap: 20px; padding: 16px clamp(16px, 4vw, 40px) 24px; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+.panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
+.results { display: grid; gap: 20px; min-width: 0; }
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } .panel { position: static; max-height: none; } }
+
+/* ===== Controles ===== */
+fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 12px; padding: 8px 12px 12px; }
+legend { padding: 0 6px; font-weight: 600; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.field { display: grid; gap: 3px; margin-top: 10px; }
+.field > label { display: flex; justify-content: space-between; gap: 8px; font-size: .88rem; }
+output { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; }
+.row { display: flex; gap: 8px; }
+.seg { display: flex; gap: 14px; font-size: .9rem; }
+.seg label { display: flex; gap: 5px; align-items: center; }
+.check { display: flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--muted); margin-bottom: 6px; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.actions { display: grid; gap: 8px; }
+button { font: inherit; cursor: pointer; border-radius: 10px; padding: 9px 12px; border: 1px solid var(--line); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 11px 12px; }
+button.secondary { background: transparent; color: var(--accent); border-color: var(--accent); }
+button.ghost { background: var(--card); color: var(--text); font-size: .82rem; padding: 7px 8px; }
+button:hover { filter: brightness(.96); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ===== Tabla ===== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 640px; }
+th, td { padding: 10px 10px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; }
+thead th { font-size: .78rem; color: var(--muted); font-weight: 600; text-align: right; }
+th[scope=row], thead th:first-child { text-align: left; }
+tbody th { font-weight: 600; white-space: nowrap; }
+td.best { background: var(--good-bg); color: var(--good); font-weight: 700; border-radius: 6px; }
+td.best small { color: var(--muted); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+.verdict { margin: 12px 0 0; }
+
+/* ===== Gráficas ===== */
+.chart-box { position: relative; height: 340px; }
+.chart-box.short { height: 300px; }
+
+/* ===== Gemelo digital ===== */
+.scrub { margin: 0 0 14px; }
+.twins { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.twin { margin: 0; padding: 12px; border: 2px solid var(--line); border-radius: 12px; text-align: center; transition: border-color .2s; }
+.twin.ideal { border-color: var(--good); }
+.twin.over { border-color: var(--warn); }
+.twin.obese { border-color: var(--bad); }
+.twin.under { border-color: var(--info); }
+.twin figcaption { display: grid; gap: 4px; justify-items: center; margin-top: 4px; }
+.badge { font-size: .8rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--line); }
+.twin.ideal .badge { background: var(--good-bg); color: var(--good); }
+.twin.over .badge { background: rgba(245,158,11,.18); color: var(--warn); }
+.twin.obese .badge { background: rgba(239,68,68,.18); color: var(--bad); }
+.twin.under .badge { background: rgba(59,130,246,.18); color: var(--info); }
+.cat { width: 100%; max-width: 220px; height: auto; }
+.cat .body, .cat .head, .cat .ear, .cat .paw { fill: var(--fur); }
+.cat .belly { fill: #fff; }
+.cat .tail { fill: none; stroke: var(--fur); stroke-width: 14; stroke-linecap: round; }
+.cat .eye { fill: #1f2937; }
+.cat .shine { fill: #fff; }
+.cat .nose { fill: #e58a8a; }
+.cat .mouth { fill: none; stroke: #1f2937; stroke-width: 2.4; stroke-linecap: round; }
+.cat .mouth.open { fill: #7f1d1d; stroke: none; }
+.cat .whisk { stroke: #1f2937; stroke-width: 1.4; opacity: .55; fill: none; }
+.cat .ribs { stroke: var(--fur-dark); stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.cat .bubble rect { fill: #fff; stroke: var(--bad); stroke-width: 2; }
+.cat .bubble text { fill: var(--bad); font: 700 15px system-ui, sans-serif; }
+
+/* ===== Pie ===== */
+.foot { padding: 0 clamp(16px, 4vw, 40px) 40px; color: var(--muted); font-size: .9rem; }
+.foot summary { cursor: pointer; font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Michi · Gemelo digital de alimentador inteligente</h1>
+  <p>Simulación fisiológica horaria de un gato. Los tres agentes se enfrentan al mismo escenario aleatorio (misma semilla) y se evalúan con la misma métrica de bienestar.</p>
+</header>
+
+<main class="layout">
+  <!-- ===== Panel de control ===== -->
+  <aside class="panel card" aria-label="Panel de control">
+    <form id="controls" onsubmit="return false">
+      <fieldset>
+        <legend>Escenario</legend>
+        <div class="field">
+          <label for="seed">Semilla aleatoria</label>
+          <div class="row"><input type="number" id="seed" min="1" max="999999" value="1"><button type="button" id="btnSeed" class="ghost" title="Semilla nueva">Nueva</button></div>
+        </div>
+        <div class="field">
+          <label>Días de simulación</label>
+          <div class="seg">
+            <label><input type="radio" name="days" value="7"> 7</label>
+            <label><input type="radio" name="days" value="14" checked> 14</label>
+            <label><input type="radio" name="days" value="30"> 30</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="idealW">Peso ideal <output for="idealW"></output></label>
+          <input type="range" id="idealW" min="3" max="7" step="0.1" value="4.2" data-unit=" kg">
+        </div>
+        <div class="field">
+          <label for="startW">Peso inicial <output for="startW"></output></label>
+          <input type="range" id="startW" min="3" max="7" step="0.1" value="4.5" data-unit=" kg">
+        </div>
+        <div class="field">
+          <label for="activity">Nivel de actividad (juego) <output for="activity"></output></label>
+          <input type="range" id="activity" min="0.5" max="2" step="0.1" value="1" data-unit="×">
+        </div>
+        <p class="hint" id="needInfo"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Agente de utilidad: U(g)</legend>
+        <div class="field">
+          <label for="alpha">α · desviación de peso <output for="alpha"></output></label>
+          <input type="range" id="alpha" min="0" max="10" step="0.5" value="3">
+        </div>
+        <div class="field">
+          <label for="beta">β · hambre nocturna <output for="beta"></output></label>
+          <input type="range" id="beta" min="0" max="10" step="0.5" value="2">
+        </div>
+        <div class="field">
+          <label for="gamma">γ · desperdicio <output for="gamma"></output></label>
+          <input type="range" id="gamma" min="0" max="10" step="0.5" value="1">
+        </div>
+        <div class="presets">
+          <button type="button" class="ghost" data-preset="3,2,1">Equilibrado</button>
+          <button type="button" class="ghost" data-preset="8,0.5,0.5">Priorizar peso</button>
+          <button type="button" class="ghost" data-preset="1,8,0.5">Priorizar saciedad</button>
+          <button type="button" class="ghost" data-preset="3,2,8">Evitar desperdicio</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Agentes de referencia</legend>
+        <div class="field">
+          <label for="baseG">Porción fija del modo base (8:00 y 20:00) <output for="baseG"></output></label>
+          <input type="range" id="baseG" min="20" max="150" step="5" value="100" data-unit=" g">
+        </div>
+        <div class="field">
+          <label for="contG">Porción de contingencia del reflejo <output for="contG"></output></label>
+          <input type="range" id="contG" min="10" max="80" step="5" value="40" data-unit=" g">
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="button" id="btnRun" class="primary">Ejecutar Comparación</button>
+        <button type="button" id="btnMC" class="secondary">Validar con 20 semillas</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- ===== Resultados ===== -->
+  <section class="results">
+    <article class="card">
+      <h2>Tabla comparativa</h2>
+      <div class="table-wrap">
+        <table id="cmp">
+          <caption class="sr">Comparación de los tres agentes con la misma semilla y la misma métrica</caption>
+          <thead>
+            <tr>
+              <th scope="col">Agente</th>
+              <th scope="col">Bienestar total acumulado (U)<small>mayor es mejor</small></th>
+              <th scope="col">Desviación final vs. peso ideal (kg)</th>
+              <th scope="col">Comida desperdiciada (g)</th>
+              <th scope="col">Episodios de hambre extrema</th>
+              <th scope="col">Cómputo / pasos</th>
+            </tr>
+          </thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+      <p class="verdict" id="verdict"></p>
+      <p class="hint">Verde = mejor valor de la columna. El bienestar usa la misma U(g) con los α, β, γ del panel, evaluada sobre el peso real y el hambre real de Michi cada noche.</p>
+    </article>
+
+    <article class="card">
+      <h2>Evolución del peso</h2>
+      <label class="check"><input type="checkbox" id="showNoisy"> Mostrar lectura de la balanza (con ruido)</label>
+      <div class="chart-box"><canvas id="weightChart"></canvas></div>
+      <p class="hint" id="chartMsg" hidden>No se pudo cargar Chart.js desde el CDN (¿sin conexión?). La tabla y el gemelo digital siguen funcionando.</p>
+    </article>
+
+    <article class="card">
+      <h2>Gemelo digital de Michi</h2>
+      <div class="field scrub">
+        <label for="dayRange">Día de la simulación: <b id="dayLabel">0</b></label>
+        <input type="range" id="dayRange" min="0" max="14" step="1" value="14">
+      </div>
+      <div class="twins" id="twins"></div>
+    </article>
+
+    <article class="card">
+      <h2>Inspector de decisión (Agente de Utilidad), día <span id="utilDay">1</span></h2>
+      <p class="hint">Cada curva es U(g) para un turno. La estrella marca la porción elegida (máximo). Pasa el cursor para ver el peso, el hambre y el desperdicio que predice el modelo interno.</p>
+      <div class="chart-box short"><canvas id="utilChart"></canvas></div>
+    </article>
+
+    <article class="card" id="mcWrap" hidden>
+      <h2>Validación con 20 semillas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Agente</th><th scope="col">Bienestar total</th><th scope="col">Desviación final (kg)</th><th scope="col">Desperdicio (g)</th><th scope="col">Episodios de hambre</th></tr></thead>
+          <tbody id="mcBody"></tbody>
+        </table>
+      </div>
+      <p class="verdict" id="mcNote"></p>
+    </article>
+  </section>
+</main>
+
+<footer class="foot">
+  <details>
+    <summary>Modelo y fórmulas</summary>
+    <ul>
+      <li><b>Energía en reposo:</b> RER = 70 × peso<sup>0,75</sup> kcal/día.</li>
+      <li><b>Gasto total:</b> RER × factor (1,2, ajustado por temperatura) + kcal de actividad (nivel de juego, temperatura y perfil horario).</li>
+      <li><b>Peso:</b> Δpeso (kg) = (kcal consumidas − kcal gastadas) / 7700, cada hora; la balanza añade ruido gaussiano (σ = 0,02 kg).</li>
+      <li><b>Utilidad:</b> U(g) = −α·|peso_mañana(g) − peso_ideal| − β·hambre_nocturna(g) − γ·desperdicio(g), con términos normalizados (100 g de peso, 50 g de comida).</li>
+    </ul>
+  </details>
+</footer>
+
+<script>
+/* =====================================================================
+   Michi · Gemelo digital de alimentador inteligente (vanilla JS, ES6)
+   ===================================================================== */
+'use strict';
+
+/* ---------- 1. CONFIGURACIÓN GLOBAL ---------- */
+const CFG = {
+  KCAL_PER_G: 3.7,        // densidad energética del alimento seco (kcal/g)
+  KCAL_PER_KG: 7700,      // kcal por kg de tejido corporal
+  RER_K: 70, RER_EXP: 0.75,
+  MAINT_FACTOR: 1.2,      // factor de mantenimiento (adulto esterilizado)
+  PLAY_KCAL: 30,          // kcal/día de juego con nivel de actividad = 1
+  SENSOR_SIGMA: 0.02,     // ruido de la balanza (kg)
+  MAX_BITE_G: 25, GREED: 0.30,
+  HUNGER_RISE: 0.025, DEFICIT_GAIN: 0.0025, DEFICIT_EMA: 0.8, ACT_HUNGER: 0.01, SATIETY: 0.006,
+  SPOIL_H: 6,             // horas tras las cuales el sobrante se desecha
+  EXTREME: 0.85, EXTREME_RESET: 0.7,
+  BASE_HOURS: [8, 20], UTIL_HOURS: [8, 14, 20],
+  CAND_STEP: 5, CAND_MAX: 150,
+  K_DEV: 0.1, K_WASTE: 50 // escalas de normalización de U (100 g de peso, 50 g de comida)
+};
+// Perfil horario de actividad (crepuscular), normalizado a suma 1
+const PROFILE = (() => {
+  const raw = [1,1,1,1,1,2,4,5,4,2,1,1,1,1,1,1,2,4,5,5,4,3,2,1];
+  const s = raw.reduce((a, b) => a + b, 0);
+  return raw.map(x => x / s);
+})();
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+/* ---------- 2. ALEATORIEDAD REPRODUCIBLE (semilla + cinta común) ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(r) {
+  let u = 0; while (u === 0) u = r();
+  const v = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+// La cinta se genera una sola vez por semilla: los 3 agentes ven EXACTAMENTE el mismo azar
+function makeTape(seed, days) {
+  const r = mulberry32(seed), n = days * 24;
+  const tp = { eat: [], bite: [], beg: [], sensor: [], hunger: [], temp: [], play: [], actObs: [] };
+  for (let t = 0; t < n; t++) {
+    tp.eat.push(r()); tp.bite.push(r()); tp.beg.push(r());
+    tp.sensor.push(gauss(r)); tp.hunger.push(gauss(r));
+  }
+  for (let d = 0; d < days; d++) {
+    tp.temp.push(22 + 4 * Math.sin(2 * Math.PI * d / 11) + 1.5 * gauss(r));
+    tp.play.push(Math.max(0.5, 1 + 0.2 * gauss(r)));
+    tp.actObs.push(gauss(r));
+  }
+  return tp;
+}
+
+/* ---------- 3. ENTORNO FISIOLÓGICO: ENERGÍA ---------- */
+// RER = 70 · peso^0.75  (kcal/día)
+const RER = w => CFG.RER_K * Math.pow(w, CFG.RER_EXP);
+// Gasto total diario = RER · factor + kcal_actividad
+const kcalDay = (w, ctx) => RER(w) * CFG.MAINT_FACTOR * ctx.tempFactor + ctx.actKcal;
+// Misma fórmula repartida por hora (la actividad sigue el perfil horario)
+const kcalHour = (w, h, ctx) => RER(w) * CFG.MAINT_FACTOR * ctx.tempFactor / 24 + ctx.actKcal * PROFILE[h];
+
+function dayContext(P, tape, d) {
+  const temp = tape.temp[d];
+  const tempFactor = clamp(1 + 0.01 * (22 - temp), 0.92, 1.15);   // el frío sube el gasto basal
+  const playMult = clamp(1 + 0.03 * (22 - temp), 0.6, 1.4);        // el calor reduce el juego
+  return { temp, tempFactor, actKcal: CFG.PLAY_KCAL * P.activity * tape.play[d] * playMult };
+}
+
+/* ---------- 4. ENTORNO FISIOLÓGICO: DINÁMICA HORARIA (hambre, ingesta, peso) ---------- */
+// rnd = {eat, bite} -> paso estocástico del entorno real; rnd = null -> paso esperado (modelo interno del agente)
+function stepPhysio(s, g, hour, ctx, rnd) {
+  if (g > 0) { s.bowl += g; s.bowlAge = 0; }
+  const hEff = Math.min(1, s.hunger + CFG.GREED);
+  let eaten = 0;
+  if (s.bowl > 0) {
+    const p = clamp(0.1 + 0.9 * hEff, 0, 1);                       // probabilidad de comer
+    const bite = CFG.MAX_BITE_G * (0.3 + 0.7 * hEff);              // bocado según hambre
+    eaten = rnd ? (rnd.eat < p ? Math.min(s.bowl, bite * (0.7 + 0.6 * rnd.bite)) : 0)
+                : Math.min(s.bowl, p * bite);
+    s.bowl -= eaten;
+  }
+  let waste = 0;
+  if (s.bowl >= 1) {
+    s.bowlAge++;
+    if (s.bowlAge >= CFG.SPOIL_H) { waste = s.bowl; s.bowl = 0; s.bowlAge = 0; }
+    s.hoursEmpty = 0;
+  } else { s.bowl = 0; s.bowlAge = 0; s.hoursEmpty++; }
+  const kcalIn = eaten * CFG.KCAL_PER_G;
+  const kcalOut = kcalHour(s.weight, hour, ctx);
+  s.weight += (kcalIn - kcalOut) / CFG.KCAL_PER_KG;                // Δpeso (kg) = (kcal in − kcal out) / 7700
+  s.deficitEMA = CFG.DEFICIT_EMA * s.deficitEMA + (1 - CFG.DEFICIT_EMA) * (kcalOut - kcalIn);
+  s.hunger = clamp(s.hunger + CFG.HUNGER_RISE + CFG.DEFICIT_GAIN * Math.max(0, s.deficitEMA)
+    + CFG.ACT_HUNGER * ctx.actKcal * PROFILE[hour] - CFG.SATIETY * kcalIn, 0, 1);
+  return { eaten, waste, kcalIn, kcalOut };
+}
+
+/* ---------- 5. FUNCIÓN DE UTILIDAD (usada por el agente y por la métrica global) ---------- */
+// U = −α·|peso − ideal| − β·hambre_nocturna − γ·desperdicio   (términos normalizados por K_DEV y K_WASTE)
+function utilityValue(P, weight, hunger, waste) {
+  return -P.alpha * Math.abs(weight - P.idealW) / CFG.K_DEV
+         - P.beta * hunger
+         - P.gamma * waste / CFG.K_WASTE;
+}
+
+/* ---------- 6. CLASE PetEnvironment ---------- */
+class PetEnvironment {
+  constructor(P, tape) {
+    this.P = P; this.tape = tape; this.t = 0; this.T = P.days * 24;
+    this.s = { weight: P.startW, hunger: 0.4, bowl: 0, bowlAge: 0, hoursEmpty: 0, deficitEMA: 0 };
+    this.inEpisode = false; this.episodes = 0; this.begs = 0;
+    this.totalWaste = 0; this.totalScore = 0;
+    this.weights = [P.startW]; this.weightsObs = [P.startW]; this.hungerNight = []; this.intake = [];
+    this.acc = { eaten: 0, waste: 0 };
+  }
+  get done() { return this.t >= this.T; }
+  ctx(d) { return dayContext(this.P, this.tape, d); }
+  observe() {
+    const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s, c = this.ctx(d);
+    return {
+      day: d, hour: h,
+      weightObs: s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[t],          // balanza con ruido
+      bowl: s.bowl, bowlAge: s.bowlAge, hoursEmpty: s.hoursEmpty,
+      hungerObs: clamp(s.hunger + 0.05 * this.tape.hunger[t], 0, 1),         // proxy de hambre (maullidos, velocidad al comer)
+      deficit: s.deficitEMA,
+      ctxEst: { tempFactor: c.tempFactor, actKcal: c.actKcal * (1 + 0.08 * this.tape.actObs[d]) } // collar + termómetro
+    };
+  }
+  step(g) {
+    const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s;
+    const r = stepPhysio(s, g, h, this.ctx(d), { eat: this.tape.eat[t], bite: this.tape.bite[t] });
+    this.acc.eaten += r.eaten; this.acc.waste += r.waste; this.totalWaste += r.waste;
+    if (s.hunger >= 0.75 && s.bowl < 1 && this.tape.beg[t] < 0.5) this.begs++;
+    if (!this.inEpisode && s.hunger >= CFG.EXTREME) { this.episodes++; this.inEpisode = true; }
+    else if (this.inEpisode && s.hunger < CFG.EXTREME_RESET) this.inEpisode = false;
+    if (h === 23) this.closeDay();
+    this.t++;
+    if (this.done) this.totalWaste += s.bowl;                                // sobrante final cuenta como desperdicio
+  }
+  closeDay() {
+    const s = this.s, P = this.P;
+    this.totalScore += utilityValue(P, s.weight, s.hunger, this.acc.waste);  // bienestar diario real
+    this.weights.push(s.weight);
+    this.weightsObs.push(s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[this.t]);
+    this.hungerNight.push(s.hunger); this.intake.push(this.acc.eaten);
+    this.acc = { eaten: 0, waste: 0 };
+  }
+  summary() {
+    const s = this.s, P = this.P;
+    return { score: this.totalScore, finalWeight: s.weight, deviation: Math.abs(s.weight - P.idealW),
+      waste: this.totalWaste, episodes: this.episodes, begs: this.begs, steps: this.t,
+      weights: this.weights, weightsObs: this.weightsObs, hungerNight: this.hungerNight, intake: this.intake };
+  }
+}
+
+/* ---------- 7. AGENTES ---------- */
+// 7.1 Modo base: horario fijo, ciego al estado del gato
+class FixedScheduleAgent {
+  constructor(P) { this.P = P; this.evals = 0; }
+  decide(o) { return CFG.BASE_HOURS.includes(o.hour) ? this.P.baseG : 0; }
+}
+// 7.2 Técnica 1: agente reflejo simple (condición → acción, sin memoria ni modelo)
+class ReflexAgent {
+  constructor(P) { this.P = P; this.evals = 0; }
+  decide(o) { return o.hoursEmpty > 4 ? this.P.contG : 0; }
+}
+// 7.3 Técnica 2: agente basado en utilidad (modelo de transición + búsqueda sobre candidatos)
+// Rollout con el modelo interno: repite la porción g en los turnos restantes del día
+function predictOutcome(o, g) {
+  const s = { weight: o.weightObs, hunger: o.hungerObs, bowl: o.bowl, bowlAge: o.bowlAge,
+              hoursEmpty: o.hoursEmpty, deficitEMA: o.deficit };
+  let waste = 0;
+  for (let h = o.hour; h < 24; h++) {
+    const r = stepPhysio(s, CFG.UTIL_HOURS.includes(h) ? g : 0, h, o.ctxEst, null);
+    waste += r.waste;
+  }
+  waste += s.bowl;                                                          // se asume que el sobrante nocturno se desecha
+  return { weight: s.weight, hunger: s.hunger, waste };                     // peso_mañana, hambre_nocturna, desperdicio
+}
+class UtilityAgent {
+  constructor(P) { this.P = P; this.evals = 0; this.log = []; }
+  decide(o) {
+    if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
+    let bestG = 0, bestU = -Infinity, bestIdx = 0; const cands = [];
+    for (let g = 0; g <= CFG.CAND_MAX; g += CFG.CAND_STEP) {
+      const pr = predictOutcome(o, g);
+      const u = utilityValue(this.P, pr.weight, pr.hunger, pr.waste);
+      this.evals++;
+      cands.push({ x: g, y: u, w: pr.weight, h: pr.hunger, waste: pr.waste });
+      if (u > bestU) { bestU = u; bestG = g; bestIdx = cands.length - 1; }
+    }
+    this.log.push({ day: o.day, hour: o.hour, best: bestG, bestIdx, cands });
+    return bestG;
+  }
+}
+
+/* ---------- 8. EJECUCIÓN Y COMPARACIÓN ---------- */
+function makeAgents(P) {
+  return [
+    { id: 'base',   name: 'Modo Base (horario fijo)',  color: '#6b7280', agent: new FixedScheduleAgent(P) },
+    { id: 'reflex', name: 'Agente Reflejo Simple',      color: '#f59e0b', agent: new ReflexAgent(P) },
+    { id: 'util',   name: 'Agente Basado en Utilidad',  color: '#10b981', agent: new UtilityAgent(P) }
+  ];
+}
+function runSimulation(agent, P, tape) {
+  const env = new PetEnvironment(P, tape);
+  const t0 = performance.now();
+  while (!env.done) env.step(agent.decide(env.observe()));
+  const ms = performance.now() - t0;
+  return Object.assign(env.summary(), { ms, evals: agent.evals, log: agent.log || null });
+}
+function runComparison(P) {
+  const tape = makeTape(P.seed, P.days);
+  return makeAgents(P).map(a => Object.assign({ id: a.id, name: a.name, color: a.color }, runSimulation(a.agent, P, tape)));
+}
+function monteCarlo(P, n = 20) {
+  const acc = { base: [], reflex: [], util: [] }; let wins = 0;
+  for (let i = 0; i < n; i++) {
+    const res = runComparison(Object.assign({}, P, { seed: P.seed + i }));
+    res.forEach(r => acc[r.id].push(r));
+    if (res[2].score >= Math.max(res[0].score, res[1].score)) wins++;
+  }
+  const st = (arr, k) => {
+    const m = arr.reduce((a, r) => a + r[k], 0) / arr.length;
+    const sd = Math.sqrt(arr.reduce((a, r) => a + (r[k] - m) ** 2, 0) / arr.length);
+    return { m, sd };
+  };
+  const out = {};
+  for (const id of Object.keys(acc)) {
+    out[id] = { score: st(acc[id], 'score'), deviation: st(acc[id], 'deviation'),
+                waste: st(acc[id], 'waste'), episodes: st(acc[id], 'episodes') };
+  }
+  return { n, wins, stats: out };
+}
+
+/* ---------- 9. INTERFAZ (renderizado UI) ---------- */
+const NAMES = { base: 'Modo Base (horario fijo)', reflex: 'Agente Reflejo Simple', util: 'Agente Basado en Utilidad' };
+const f = (x, d = 2) => x.toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function initUI() {
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  let results = null, P = null, weightChart = null, utilChart = null;
+
+  function readParams() {
+    const days = +document.querySelector('input[name="days"]:checked').value;
+    return { seed: Math.max(1, Math.floor(+$('seed').value) || 1), idealW: +$('idealW').value, startW: +$('startW').value,
+      days, activity: +$('activity').value, alpha: +$('alpha').value, beta: +$('beta').value, gamma: +$('gamma').value,
+      baseG: +$('baseG').value, contG: +$('contG').value };
+  }
+  function syncOutputs() {
+    document.querySelectorAll('input[type="range"]').forEach(inp => {
+      const out = document.querySelector(`output[for="${inp.id}"]`);
+      if (!out) return;
+      const step = inp.step && inp.step.includes('.') ? inp.step.split('.')[1].length : 0;
+      out.textContent = (+inp.value).toFixed(step) + (inp.dataset.unit || '');
+    });
+    const p = readParams();
+    const ctx = { tempFactor: 1, actKcal: CFG.PLAY_KCAL * p.activity };
+    const need = kcalDay(p.idealW, ctx);
+    $('needInfo').innerHTML = `Con peso ${f(p.idealW, 1)} kg: RER = <b>${f(RER(p.idealW), 0)}</b> kcal/día · gasto total ≈ <b>${f(need, 0)}</b> kcal/día ≈ <b>${f(need / CFG.KCAL_PER_G, 0)} g</b> de alimento/día.`;
+  }
+
+  /* --- tabla comparativa --- */
+  function renderTable(res) {
+    const best = { score: Math.max(...res.map(r => r.score)), dev: Math.min(...res.map(r => r.deviation)),
+      waste: Math.min(...res.map(r => r.waste)), ep: Math.min(...res.map(r => r.episodes)) };
+    const c = ok => ok ? ' class="best"' : '';
+    $('cmpBody').innerHTML = res.map(r => `<tr>
+      <th scope="row"><span class="dot" style="background:${r.color}"></span>${r.name}</th>
+      <td${c(r.score === best.score)}>${f(r.score, 1)}</td>
+      <td${c(r.deviation === best.dev)}>${f(r.deviation, 3)}<small>peso final ${f(r.finalWeight, 2)} kg</small></td>
+      <td${c(r.waste === best.waste)}>${f(r.waste, 0)}</td>
+      <td${c(r.episodes === best.ep)}>${r.episodes}<small>${r.begs} peticiones de comida</small></td>
+      <td>${f(r.ms, 2)} ms<small>${r.steps} pasos${r.evals ? ' · ' + r.evals.toLocaleString('es-PE') + ' evaluaciones U(g)' : ' · sin búsqueda'}</small></td>
+    </tr>`).join('');
+    const w = res.reduce((a, b) => b.score > a.score ? b : a), u = res[2];
+    $('verdict').innerHTML = `Semilla <b>${P.seed}</b>, <b>${P.days}</b> días: mayor bienestar acumulado para <b>${w.name}</b> (${f(w.score, 1)}). `
+      + `Desviación final de peso — Base: ${f(res[0].deviation, 3)} kg · Reflejo: ${f(res[1].deviation, 3)} kg · Utilidad: ${f(u.deviation, 3)} kg.`;
+  }
+
+  /* --- gráfica de peso --- */
+  function renderWeightChart(res) {
+    if (typeof Chart === 'undefined') { $('chartMsg').hidden = false; return; }
+    Chart.defaults.color = css('--muted'); Chart.defaults.borderColor = css('--line');
+    const noisy = $('showNoisy').checked;
+    const labels = Array.from({ length: P.days + 1 }, (_, i) => i);
+    const ds = res.map(r => ({ label: r.name, data: noisy ? r.weightsObs : r.weights, borderColor: r.color,
+      backgroundColor: r.color, borderWidth: 2.5, pointRadius: P.days > 14 ? 0 : 3, tension: 0.25 }));
+    ds.push({ label: 'Peso ideal', data: labels.map(() => P.idealW), borderColor: css('--text'), borderDash: [6, 5],
+      borderWidth: 1.5, pointRadius: 0 });
+    const data = { labels, datasets: ds };
+    if (weightChart) { weightChart.data = data; weightChart.update(); return; }
+    weightChart = new Chart($('weightChart'), { type: 'line', data, options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} kg` } } },
+      scales: { x: { title: { display: true, text: 'Día' } }, y: { title: { display: true, text: 'Peso (kg)' }, grace: '5%' } } } });
+  }
+
+  /* --- gemelo digital (avatar) --- */
+  function catSVG() {
+    return `<svg viewBox="0 0 220 200" class="cat" role="img" aria-label="Avatar de Michi">
+      <path class="tail" d="M165 140 C210 130 212 85 188 72"/>
+      <ellipse class="body" cx="110" cy="132" rx="50" ry="34"/>
+      <ellipse class="belly" cx="110" cy="140" rx="30" ry="20"/>
+      <g class="ribs"><path d="M82 118 q10 7 22 0 M82 130 q10 7 22 0 M116 118 q10 7 22 0 M116 130 q10 7 22 0"/></g>
+      <ellipse class="paw" cx="80" cy="168" rx="14" ry="8"/><ellipse class="paw" cx="140" cy="168" rx="14" ry="8"/>
+      <polygon class="ear" points="80,62 84,32 106,50"/><polygon class="ear" points="140,62 136,32 114,50"/>
+      <circle class="head" cx="110" cy="80" r="34"/>
+      <ellipse class="eye" cx="97" cy="78" rx="5" ry="6.5"/><ellipse class="eye" cx="123" cy="78" rx="5" ry="6.5"/>
+      <circle class="shine" cx="99" cy="75" r="1.8"/><circle class="shine" cx="125" cy="75" r="1.8"/>
+      <polygon class="nose" points="106,87 114,87 110,92"/>
+      <path class="mouth happy" d="M100 94 Q110 103 120 94"/>
+      <path class="mouth sad" d="M100 101 Q110 92 120 101"/>
+      <ellipse class="mouth open" cx="110" cy="99" rx="6" ry="7"/>
+      <path class="whisk" d="M86 90 L62 86 M86 95 L62 98 M134 90 L158 86 M134 95 L158 98"/>
+      <g class="bubble"><rect x="128" y="8" width="80" height="30" rx="12"/><text x="168" y="28" text-anchor="middle">¡Miau!</text></g>
+    </svg>`;
+  }
+  function buildTwins() {
+    $('twins').innerHTML = Object.keys(NAMES).map(id => `<figure class="twin" data-id="${id}">
+      ${catSVG()}<figcaption><b>${NAMES[id]}</b><span class="badge"></span><small class="meta"></small></figcaption></figure>`).join('');
+  }
+  function stateOf(ratio, hunger) {
+    const w = ratio < 0.90 ? { k: 'under', t: 'Bajo de peso' } : ratio <= 1.07 ? { k: 'ideal', t: 'Peso ideal' }
+      : ratio <= 1.20 ? { k: 'over', t: 'Sobrepeso' } : { k: 'obese', t: 'Obeso' };
+    return Object.assign({ hungry: hunger >= 0.7 }, w);
+  }
+  function renderTwins(day) {
+    results.forEach(r => {
+      const el = document.querySelector(`.twin[data-id="${r.id}"]`);
+      const w = r.weights[day], hunger = day > 0 ? r.hungerNight[day - 1] : 0.4, ratio = w / P.idealW;
+      const st = stateOf(ratio, hunger);
+      const rx = clamp(50 + (ratio - 1) * 120, 38, 86), ry = clamp(34 + (ratio - 1) * 80, 26, 56);
+      const set = (sel, o) => el.querySelectorAll(sel).forEach(n => Object.entries(o).forEach(([k, v]) => n.setAttribute(k, v)));
+      set('.body', { rx, ry }); set('.belly', { rx: rx * 0.6, ry: ry * 0.58, cy: 132 + ry * 0.25 });
+      set('.paw', { cy: 132 + ry - 2 });
+      el.querySelector('.ribs').style.opacity = st.k === 'under' ? 1 : 0;
+      el.querySelector('.belly').style.opacity = st.k === 'over' || st.k === 'obese' ? 0.55 : 0.3;
+      el.querySelector('.bubble').style.display = st.hungry ? 'block' : 'none';
+      el.querySelector('.mouth.happy').style.display = !st.hungry && st.k !== 'under' ? 'block' : 'none';
+      el.querySelector('.mouth.sad').style.display = !st.hungry && st.k === 'under' ? 'block' : 'none';
+      el.querySelector('.mouth.open').style.display = st.hungry ? 'block' : 'none';
+      el.className = `twin ${st.k}${st.hungry ? ' hungry' : ''}`;
+      el.querySelector('.badge').textContent = st.t + (st.hungry ? ' · hambriento' : '');
+      el.querySelector('.meta').textContent = `Día ${day}: ${f(w, 2)} kg (ideal ${f(P.idealW, 1)}) · hambre nocturna ${f(hunger, 2)}`;
+    });
+    $('dayLabel').textContent = day;
+    renderUtilChart(Math.max(1, day));
+  }
+
+  /* --- inspector de decisión: U(g) por turno --- */
+  function renderUtilChart(day) {
+    if (typeof Chart === 'undefined') return;
+    const log = results[2].log.filter(e => e.day === day - 1);
+    const colors = ['#6366f1', '#f59e0b', '#10b981'];
+    const ds = log.map((e, i) => ({ label: `Turno ${String(e.hour).padStart(2, '0')}:00 → elige ${e.best} g`, data: e.cands,
+      borderColor: colors[i], backgroundColor: colors[i], showLine: true, borderWidth: 2, tension: 0.2,
+      pointRadius: e.cands.map((_, j) => j === e.bestIdx ? 8 : 2), pointStyle: e.cands.map((_, j) => j === e.bestIdx ? 'star' : 'circle') }));
+    Chart.defaults.color = css('--muted'); Chart.defaults.borderColor = css('--line');
+    const opts = { responsive: true, maintainAspectRatio: false, parsing: false,
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => `U(${c.raw.x} g) = ${c.raw.y.toFixed(2)}`,
+        afterLabel: c => [`peso mañana: ${c.raw.w.toFixed(3)} kg`, `hambre nocturna: ${c.raw.h.toFixed(2)}`, `desperdicio: ${c.raw.waste.toFixed(0)} g`] } } },
+      scales: { x: { type: 'linear', title: { display: true, text: 'Porción candidata g (repetida en los turnos restantes)' } },
+                y: { title: { display: true, text: 'U(g)' } } } };
+    $('utilDay').textContent = day;
+    if (utilChart) { utilChart.data.datasets = ds; utilChart.update(); return; }
+    utilChart = new Chart($('utilChart'), { type: 'scatter', data: { datasets: ds }, options: opts });
+  }
+
+  /* --- validación Monte Carlo --- */
+  function renderMC() {
+    const mc = monteCarlo(P, 20), ms = (s, d) => `${f(s.m, d)} ± ${f(s.sd, d)}`;
+    $('mcBody').innerHTML = Object.keys(NAMES).map(id => {
+      const s = mc.stats[id];
+      return `<tr><th scope="row">${NAMES[id]}</th><td>${ms(s.score, 1)}</td><td>${ms(s.deviation, 3)}</td><td>${ms(s.waste, 0)}</td><td>${ms(s.episodes, 1)}</td></tr>`;
+    }).join('');
+    $('mcNote').innerHTML = `El agente de utilidad obtuvo el mayor bienestar en <b>${mc.wins} de ${mc.n}</b> semillas (${P.seed} a ${P.seed + mc.n - 1}). Valores: media ± desviación estándar.`;
+    $('mcWrap').hidden = false;
+  }
+
+  /* --- flujo principal --- */
+  function runAll() {
+    P = readParams();
+    results = runComparison(P);
+    renderTable(results);
+    renderWeightChart(results);
+    const dr = $('dayRange'); dr.max = P.days; dr.value = P.days;
+    renderTwins(P.days);
+    $('mcWrap').hidden = true;
+  }
+
+  buildTwins();
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', syncOutputs));
+  $('btnRun').addEventListener('click', runAll);$('btnMC').addEventListener('click', () => { if (!results) runAll(); P = readParams(); renderMC(); });
+  $('btnSeed').addEventListener('click', () => {$('seed').value = Math.floor(Math.random() * 9000) + 1; });
+  $('dayRange').addEventListener('input', e => renderTwins(+e.target.value));$('showNoisy').addEventListener('change', () => results && renderWeightChart(results));
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const [a, be, g] = b.dataset.preset.split(',');
+    $('alpha').value = a; $('beta').value = be; $('gamma').value = g;
+    syncOutputs(); runAll();
+  }));
+  syncOutputs(); runAll();
+}
+
+if (typeof document !== 'undefined') initUI();
+</script>
+</body>
+</html>
