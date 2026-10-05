@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Michi · Gemelo Digital de Alimentador Inteligente</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --muted: #64748b; --line: #e2e8f0;
+  --accent: #4f46e5; --accent-light: #eef2ff; --good: #059669; --good-bg: #ecfdf5;
+  --warn: #d97706; --bad: #dc2626; --info: #2563eb; --fur: #f59e0b; --fur-dark: #b45309;
+  --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #090d16; --card: #131825; --text: #f1f5f9; --muted: #94a3b8; --line: #1e293b;
+    --accent: #6366f1; --accent-light: #1e1b4b; --good-bg: rgba(5,150,105,0.15); --shadow: none;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: 14px/1.5 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+[hidden] { display: none !important; }
+
+/* Header simple */
+header.top { max-width: 1240px; margin: 0 auto; padding: 28px 24px 12px; }
+header.top h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+header.top p { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+
+/* Layout fluido */
+.layout { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 310px 1fr; gap: 20px; padding: 12px 24px 32px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+.panel { position: sticky; top: 16px; display: grid; gap: 14px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.results { display: grid; gap: 16px; min-width: 0; }
+
+/* Controles simplificados */
+.group-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
+.field { display: grid; gap: 4px; margin-bottom: 10px; }
+.field label { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 500; }
+output { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+input[type=number] { width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 0.85rem; }
+.row { display: flex; gap: 6px; }
+.seg { display: flex; gap: 12px; font-size: 0.85rem; color: var(--muted); }
+.seg label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; }
+
+/* Menú colapsable para parámetros finos */
+details.subpanel { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+details.subpanel summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--muted); list-style: none; display: flex; justify-content: space-between; user-select: none; }
+details.subpanel summary::after { content: '▾'; font-size: 0.9rem; }
+details.subpanel[open] summary::after { content: '▴'; }
+.sub-content { padding-top: 10px; }
+
+.presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; margin-bottom: 8px; }
+.actions { display: grid; gap: 6px; margin-top: 8px; }
+button { font: inherit; cursor: pointer; border-radius: 8px; padding: 7px 10px; border: 1px solid var(--line); transition: all .15s ease; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; padding: 9px; }
+button.secondary { background: transparent; color: var(--accent); border-color: var(--line); font-size: 0.82rem; }
+button.ghost { background: var(--card); color: var(--muted); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
+button:hover { filter: brightness(.95); }
+
+/* Tabla limpia */
+h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 580px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+thead th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+th[scope=row], thead th:first-child { text-align: left; }
+td.best { background: var(--good-bg); color: var(--good); font-weight: 700; border-radius: 6px; }
+td small { display: block; font-size: 0.7rem; color: var(--muted); font-weight: normal; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.verdict { margin: 10px 0 0; font-size: 0.8rem; color: var(--text); }
+
+/* Gráficos */
+.chart-box { position: relative; height: 260px; margin-top: 8px; }
+.check { display: flex; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+
+/* Gemelo digital */
+.scrub { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.scrub label { font-size: 0.8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.twins { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.twin { padding: 12px 8px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
+.twin.ideal { border-color: var(--good); background: rgba(5,150,105,0.02); }
+.twin.over { border-color: var(--warn); }
+.twin.obese { border-color: var(--bad); }
+.twin.under { border-color: var(--info); }
+.twin figcaption { display: grid; gap: 3px; justify-items: center; margin-top: 6px; }
+.badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--line); }
+.twin.ideal .badge { background: var(--good-bg); color: var(--good); }
+.twin.over .badge { background: rgba(217,119,6,0.15); color: var(--warn); }
+.twin.obese .badge { background: rgba(220,38,38,0.15); color: var(--bad); }
+.twin.under .badge { background: rgba(37,99,235,0.15); color: var(--info); }
+.meta { font-size: 0.72rem; color: var(--muted); }
+.cat { width: 100%; max-width: 140px; height: auto; }
+.cat .body, .cat .head, .cat .ear, .cat .paw { fill: var(--fur); }
+.cat .belly { fill: #fff; }
+.cat .tail { fill: none; stroke: var(--fur); stroke-width: 12; stroke-linecap: round; }
+.cat .eye { fill: #0f172a; }
+.cat .shine { fill: #fff; }
+.cat .nose { fill: #f87171; }
+.cat .mouth { fill: none; stroke: #0f172a; stroke-width: 2.2; stroke-linecap: round; }
+.cat .mouth.open { fill: #991b1b; stroke: none; }
+.cat .whisk { stroke: #0f172a; stroke-width: 1.2; opacity: .4; fill: none; }
+.cat .ribs { stroke: var(--fur-dark); stroke-width: 2; fill: none; stroke-linecap: round; }
+.cat .bubble rect { fill: #fff; stroke: var(--bad); stroke-width: 1.5; }
+.cat .bubble text { fill: var(--bad); font: 700 13px system-ui, sans-serif; }
+
+footer.foot { max-width: 1240px; margin: 0 auto; padding: 12px 24px 36px; color: var(--muted); font-size: 0.78rem; }
+footer.foot summary { cursor: pointer; font-weight: 600; }
+footer.foot ul { padding-left: 18px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Michi · Gemelo Digital</h1>
+  <p>Simulación fisiológica y comparativa de agentes inteligentes para alimentación de mascotas.</p>
+</header>
+
+<main class="layout">
+  <!-- Controles Limpios -->
+  <aside class="panel card" aria-label="Controles">
+    <form id="controls" onsubmit="return false">
+      <div class="group-title">Escenario básico</div>
+      
+      <div class="field">
+        <label for="seed">Semilla aleatoria</label>
+        <div class="row">
+          <input type="number" id="seed" min="1" max="999999" value="1">
+          <button type="button" id="btnSeed" class="ghost">Azar</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Duración</label>
+        <div class="seg">
+          <label><input type="radio" name="days" value="7"> 7 d</label>
+          <label><input type="radio" name="days" value="14" checked> 14 d</label>
+          <label><input type="radio" name="days" value="30"> 30 d</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="idealW">Peso ideal <output for="idealW"></output></label>
+        <input type="range" id="idealW" min="3" max="7" step="0.1" value="4.2" data-unit=" kg">
+      </div>
+
+      <div class="field">
+        <label for="startW">Peso inicial <output for="startW"></output></label>
+        <input type="range" id="startW" min="3" max="7" step="0.1" value="4.5" data-unit=" kg">
+      </div>
+
+      <div class="field">
+        <label for="activity">Nivel de actividad <output for="activity"></output></label>
+        <input type="range" id="activity" min="0.5" max="2" step="0.1" value="1" data-unit="×">
+      </div>
+
+      <p class="hint" id="needInfo"></p>
+
+      <!-- Panel colapsable para no sobrecargar la vista -->
+      <details class="subpanel">
+        <summary>Pesos de Utilidad y Parámetros</summary>
+        <div class="sub-content">
+          <div class="field">
+            <label for="alpha">α (Peso) <output for="alpha"></output></label>
+            <input type="range" id="alpha" min="0" max="10" step="0.5" value="3">
+          </div>
+          <div class="field">
+            <label for="beta">β (Hambre) <output for="beta"></output></label>
+            <input type="range" id="beta" min="0" max="10" step="0.5" value="2">
+          </div>
+          <div class="field">
+            <label for="gamma">γ (Desperdicio) <output for="gamma"></output></label>
+            <input type="range" id="gamma" min="0" max="10" step="0.5" value="1">
+          </div>
+          
+          <div class="presets">
+            <button type="button" class="ghost" data-preset="3,2,1">Equilibrio</button>
+            <button type="button" class="ghost" data-preset="8,0.5,0.5">Peso</button>
+            <button type="button" class="ghost" data-preset="1,8,0.5">Saciedad</button>
+            <button type="button" class="ghost" data-preset="3,2,8">No merma</button>
+          </div>
+
+          <div class="field">
+            <label for="baseG">Porción fija base <output for="baseG"></output></label>
+            <input type="range" id="baseG" min="20" max="150" step="5" value="100" data-unit=" g">
+          </div>
+          <div class="field">
+            <label for="contG">Porción reflejo <output for="contG"></output></label>
+            <input type="range" id="contG" min="10" max="80" step="5" value="40" data-unit=" g">
+          </div>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button type="button" id="btnRun" class="primary">Ejecutar Simulación</button>
+        <button type="button" id="btnMC" class="secondary">Monte Carlo (20 ejecuciones)</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Resultados Visuales -->
+  <section class="results">
+    <!-- Tabla -->
+    <article class="card">
+      <h2>Comparativa de Desempeño</h2>
+      <div class="table-wrap">
+        <table id="cmp">
+          <thead>
+            <tr>
+              <th scope="col">Agente</th>
+              <th scope="col">Bienestar (U)</th>
+              <th scope="col">Desviación (kg)</th>
+              <th scope="col">Desperdicio (g)</th>
+              <th scope="col">Hambre ext.</th>
+              <th scope="col">Tiempo</th>
+            </tr>
+          </thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </article>
+
+    <!-- Gemelos -->
+    <article class="card">
+      <div class="scrub">
+        <h2>Gemelos Digitales</h2>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label for="dayRange">Día <b id="dayLabel">0</b></label>
+          <input type="range" id="dayRange" min="0" max="14" step="1" value="14" style="width:130px;">
+        </div>
+      </div>
+      <div class="twins" id="twins"></div>
+    </article>
+
+    <!-- Gráfico de Peso -->
+    <article class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Evolución de Peso</h2>
+        <label class="check"><input type="checkbox" id="showNoisy"> Ruido sensor</label>
+      </div>
+      <div class="chart-box"><canvas id="weightChart"></canvas></div>
+    </article>
+
+    <!-- Gráfico Utilidad -->
+    <article class="card">
+      <h2>Curva de Utilidad U(g) · Día <span id="utilDay">1</span></h2>
+      <div class="chart-box"><canvas id="utilChart"></canvas></div>
+    </article>
+
+    <!-- Monte Carlo -->
+    <article class="card" id="mcWrap" hidden>
+      <h2>Validación Monte Carlo (20 semillas)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Agente</th><th scope="col">Bienestar</th><th scope="col">Desviación</th><th scope="col">Desperdicio</th><th scope="col">Hambre ext.</th></tr></thead>
+          <tbody id="mcBody"></tbody>
+        </table>
+      </div>
+      <p class="verdict" id="mcNote"></p>
+    </article>
+  </section>
+</main>
+
+<footer class="foot">
+  <details>
+    <summary>Fórmulas fisiológicas de la simulación</summary>
+    <ul>
+      <li><b>RER:</b> $70 \times \text{peso}^{0.75}\text{ kcal/día}$.</li>
+      <li><b>Gasto total:</b> $\text{RER} \times 1.2 \times \text{factor temperatura} + \text{actividad}$.</li>
+      <li><b>Variación de peso:</b> $\Delta\text{peso} = (\text{kcal in} - \text{kcal out}) / 7700$.</li>
+    </ul>
+  </details>
+</footer>
+
+<script>
+'use strict';
+const CFG = {
+  KCAL_PER_G: 3.7, KCAL_PER_KG: 7700, RER_K: 70, RER_EXP: 0.75, MAINT_FACTOR: 1.2,
+  PLAY_KCAL: 30, SENSOR_SIGMA: 0.02, MAX_BITE_G: 25, GREED: 0.30, HUNGER_RISE: 0.025,
+  DEFICIT_GAIN: 0.0025, DEFICIT_EMA: 0.8, ACT_HUNGER: 0.01, SATIETY: 0.006, SPOIL_H: 6,
+  EXTREME: 0.85, EXTREME_RESET: 0.7, BASE_HOURS: [8, 20], UTIL_HOURS: [8, 14, 20],
+  CAND_STEP: 5, CAND_MAX: 150, K_DEV: 0.1, K_WASTE: 50
+};
+const PROFILE = (() => {
+  const raw = [1,1,1,1,1,2,4,5,4,2,1,1,1,1,1,1,2,4,5,5,4,3,2,1];
+  const s = raw.reduce((a, b) => a + b, 0);
+  return raw.map(x => x / s);
+})();
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(r) {
+  let u = 0; while (u === 0) u = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r());
+}
+function makeTape(seed, days) {
+  const r = mulberry32(seed), n = days * 24;
+  const tp = { eat: [], bite: [], beg: [], sensor: [], hunger: [], temp: [], play: [], actObs: [] };
+  for (let t = 0; t < n; t++) {
+    tp.eat.push(r()); tp.bite.push(r()); tp.beg.push(r());
+    tp.sensor.push(gauss(r)); tp.hunger.push(gauss(r));
+  }
+  for (let d = 0; d < days; d++) {
+    tp.temp.push(22 + 4 * Math.sin(2 * Math.PI * d / 11) + 1.5 * gauss(r));
+    tp.play.push(Math.max(0.5, 1 + 0.2 * gauss(r)));
+    tp.actObs.push(gauss(r));
+  }
+  return tp;
+}
+
+const RER = w => CFG.RER_K * Math.pow(w, CFG.RER_EXP);
+const kcalDay = (w, ctx) => RER(w) * CFG.MAINT_FACTOR * ctx.tempFactor + ctx.actKcal;
+const kcalHour = (w, h, ctx) => RER(w) * CFG.MAINT_FACTOR * ctx.tempFactor / 24 + ctx.actKcal * PROFILE[h];
+
+function dayContext(P, tape, d) {
+  const temp = tape.temp[d];
+  const tempFactor = clamp(1 + 0.01 * (22 - temp), 0.92, 1.15);
+  const playMult = clamp(1 + 0.03 * (22 - temp), 0.6, 1.4);
+  return { temp, tempFactor, actKcal: CFG.PLAY_KCAL * P.activity * tape.play[d] * playMult };
+}
+
+function stepPhysio(s, g, hour, ctx, rnd) {
+  if (g > 0) { s.bowl += g; s.bowlAge = 0; }
+  const hEff = Math.min(1, s.hunger + CFG.GREED);
+  let eaten = 0;
+  if (s.bowl > 0) {
+    const p = clamp(0.1 + 0.9 * hEff, 0, 1);
+    const bite = CFG.MAX_BITE_G * (0.3 + 0.7 * hEff);
+    eaten = rnd ? (rnd.eat < p ? Math.min(s.bowl, bite * (0.7 + 0.6 * rnd.bite)) : 0) : Math.min(s.bowl, p * bite);
+    s.bowl -= eaten;
+  }
+  let waste = 0;
+  if (s.bowl >= 1) {
+    s.bowlAge++;
+    if (s.bowlAge >= CFG.SPOIL_H) { waste = s.bowl; s.bowl = 0; s.bowlAge = 0; }
+    s.hoursEmpty = 0;
+  } else { s.bowl = 0; s.bowlAge = 0; s.hoursEmpty++; }
+  const kcalIn = eaten * CFG.KCAL_PER_G;
+  const kcalOut = kcalHour(s.weight, hour, ctx);
+  s.weight += (kcalIn - kcalOut) / CFG.KCAL_PER_KG;
+  s.deficitEMA = CFG.DEFICIT_EMA * s.deficitEMA + (1 - CFG.DEFICIT_EMA) * (kcalOut - kcalIn);
+  s.hunger = clamp(s.hunger + CFG.HUNGER_RISE + CFG.DEFICIT_GAIN * Math.max(0, s.deficitEMA) + CFG.ACT_HUNGER * ctx.actKcal * PROFILE[hour] - CFG.SATIETY * kcalIn, 0, 1);
+  return { eaten, waste, kcalIn, kcalOut };
+}
+
+function utilityValue(P, weight, hunger, waste) {
+  return -P.alpha * Math.abs(weight - P.idealW) / CFG.K_DEV - P.beta * hunger - P.gamma * waste / CFG.K_WASTE;
+}
+
+class PetEnvironment {
+  constructor(P, tape) {
+    this.P = P; this.tape = tape; this.t = 0; this.T = P.days * 24;
+    this.s = { weight: P.startW, hunger: 0.4, bowl: 0, bowlAge: 0, hoursEmpty: 0, deficitEMA: 0 };
+    this.inEpisode = false; this.episodes = 0; this.begs = 0;
+    this.totalWaste = 0; this.totalScore = 0;
+    this.weights = [P.startW]; this.weightsObs = [P.startW]; this.hungerNight = []; this.intake = [];
+    this.acc = { eaten: 0, waste: 0 };
+  }
+  get done() { return this.t >= this.T; }
+  ctx(d) { return dayContext(this.P, this.tape, d); }
+  observe() {
+    const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s, c = this.ctx(d);
+    return {
+      day: d, hour: h, weightObs: s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[t],
+      bowl: s.bowl, bowlAge: s.bowlAge, hoursEmpty: s.hoursEmpty,
+      hungerObs: clamp(s.hunger + 0.05 * this.tape.hunger[t], 0, 1), deficit: s.deficitEMA,
+      ctxEst: { tempFactor: c.tempFactor, actKcal: c.actKcal * (1 + 0.08 * this.tape.actObs[d]) }
+    };
+  }
+  step(g) {
+    const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s;
+    const r = stepPhysio(s, g, h, this.ctx(d), { eat: this.tape.eat[t], bite: this.tape.bite[t] });
+    this.acc.eaten += r.eaten; this.acc.waste += r.waste; this.totalWaste += r.waste;
+    if (s.hunger >= 0.75 && s.bowl < 1 && this.tape.beg[t] < 0.5) this.begs++;
+    if (!this.inEpisode && s.hunger >= CFG.EXTREME) { this.episodes++; this.inEpisode = true; }
+    else if (this.inEpisode && s.hunger < CFG.EXTREME_RESET) this.inEpisode = false;
+    if (h === 23) this.closeDay();
+    this.t++;
+    if (this.done) this.totalWaste += s.bowl;
+  }
+  closeDay() {
+    const s = this.s, P = this.P;
+    this.totalScore += utilityValue(P, s.weight, s.hunger, this.acc.waste);
+    this.weights.push(s.weight);
+    this.weightsObs.push(s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[this.t]);
+    this.hungerNight.push(s.hunger); this.intake.push(this.acc.eaten);
+    this.acc = { eaten: 0, waste: 0 };
+  }
+  summary() {
+    const s = this.s, P = this.P;
+    return { score: this.totalScore, finalWeight: s.weight, deviation: Math.abs(s.weight - P.idealW),
+      waste: this.totalWaste, episodes: this.episodes, begs: this.begs, steps: this.t,
+      weights: this.weights, weightsObs: this.weightsObs, hungerNight: this.hungerNight, intake: this.intake };
+  }
+}
+
+class FixedScheduleAgent {
+  constructor(P) { this.P = P; this.evals = 0; }
+  decide(o) { return CFG.BASE_HOURS.includes(o.hour) ? this.P.baseG : 0; }
+}
+class ReflexAgent {
+  constructor(P) { this.P = P; this.evals = 0; }
+  decide(o) { return o.hoursEmpty > 4 ? this.P.contG : 0; }
+}
+function predictOutcome(o, g) {
+  const s = { weight: o.weightObs, hunger: o.hungerObs, bowl: o.bowl, bowlAge: o.bowlAge, hoursEmpty: o.hoursEmpty, deficitEMA: o.deficit };
+  let waste = 0;
+  for (let h = o.hour; h < 24; h++) {
+    const r = stepPhysio(s, CFG.UTIL_HOURS.includes(h) ? g : 0, h, o.ctxEst, null);
+    waste += r.waste;
+  }
+  waste += s.bowl;
+  return { weight: s.weight, hunger: s.hunger, waste };
+}
+class UtilityAgent {
+  constructor(P) { this.P = P; this.evals = 0; this.log = []; }
+  decide(o) {
+    if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
+    let bestG = 0, bestU = -Infinity, bestIdx = 0; const cands = [];
+    for (let g = 0; g <= CFG.CAND_MAX; g += CFG.CAND_STEP) {
+      const pr = predictOutcome(o, g);
+      const u = utilityValue(this.P, pr.weight, pr.hunger, pr.waste);
+      this.evals++;
+      cands.push({ x: g, y: u, w: pr.weight, h: pr.hunger, waste: pr.waste });
+      if (u > bestU) { bestU = u; bestG = g; bestIdx = cands.length - 1; }
+    }
+    this.log.push({ day: o.day, hour: o.hour, best: bestG, bestIdx, cands });
+    return bestG;
+  }
+}
+
+function makeAgents(P) {
+  return [
+    { id: 'base', name: 'Modo Base (fijo)', color: '#64748b', agent: new FixedScheduleAgent(P) },
+    { id: 'reflex', name: 'Reflejo Simple', color: '#f59e0b', agent: new ReflexAgent(P) },
+    { id: 'util', name: 'Basado en Utilidad', color: '#10b981', agent: new UtilityAgent(P) }
+  ];
+}
+function runSimulation(agent, P, tape) {
+  const env = new PetEnvironment(P, tape);
+  const t0 = performance.now();
+  while (!env.done) env.step(agent.decide(env.observe()));
+  return Object.assign(env.summary(), { ms: performance.now() - t0, evals: agent.evals, log: agent.log || null });
+}
+function runComparison(P) {
+  const tape = makeTape(P.seed, P.days);
+  return makeAgents(P).map(a => Object.assign({ id: a.id, name: a.name, color: a.color }, runSimulation(a.agent, P, tape)));
+}
+function monteCarlo(P, n = 20) {
+  const acc = { base: [], reflex: [], util: [] }; let wins = 0;
+  for (let i = 0; i < n; i++) {
+    const res = runComparison(Object.assign({}, P, { seed: P.seed + i }));
+    res.forEach(r => acc[r.id].push(r));
+    if (res[2].score >= Math.max(res[0].score, res[1].score)) wins++;
+  }
+  const st = (arr, k) => {
+    const m = arr.reduce((a, r) => a + r[k], 0) / arr.length;
+    const sd = Math.sqrt(arr.reduce((a, r) => a + (r[k] - m) ** 2, 0) / arr.length);
+    return { m, sd };
+  };
+  const out = {};
+  for (const id of Object.keys(acc)) {
+    out[id] = { score: st(acc[id], 'score'), deviation: st(acc[id], 'deviation'), waste: st(acc[id], 'waste'), episodes: st(acc[id], 'episodes') };
+  }
+  return { n, wins, stats: out };
+}
+
+const NAMES = { base: 'Modo Base', reflex: 'Reflejo Simple', util: 'Basado en Utilidad' };
+const f = (x, d = 2) => x.toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function initUI() {
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  let results = null, P = null, weightChart = null, utilChart = null;
+
+  function readParams() {
+    return {
+      seed: Math.max(1, Math.floor(+$('seed').value) || 1),
+      idealW: +$('idealW').value, startW: +$('startW').value,
+      days: +document.querySelector('input[name="days"]:checked').value,
+      activity: +$('activity').value,
+      alpha: +$('alpha').value, beta: +$('beta').value, gamma: +$('gamma').value,
+      baseG: +$('baseG').value, contG: +$('contG').value
+    };
+  }
+  function syncOutputs() {
+    document.querySelectorAll('input[type="range"]').forEach(inp => {
+      const out = document.querySelector(`output[for="${inp.id}"]`);
+      if (!out) return;
+      const step = inp.step && inp.step.includes('.') ? inp.step.split('.')[1].length : 0;
+      out.textContent = (+inp.value).toFixed(step) + (inp.dataset.unit || '');
+    });
+    const p = readParams();
+    const need = kcalDay(p.idealW, { tempFactor: 1, actKcal: CFG.PLAY_KCAL * p.activity });
+    $('needInfo').innerHTML = `Gasto est.: <b>${f(need, 0)} kcal/d</b> ≈ <b>${f(need / CFG.KCAL_PER_G, 0)} g/día</b>.`;
+  }
+
+  function renderTable(res) {
+    const best = {
+      score: Math.max(...res.map(r => r.score)), dev: Math.min(...res.map(r => r.deviation)),
+      waste: Math.min(...res.map(r => r.waste)), ep: Math.min(...res.map(r => r.episodes))
+    };
+    const c = ok => ok ? ' class="best"' : '';
+    $('cmpBody').innerHTML = res.map(r => `<tr>
+      <th scope="row"><span class="dot" style="background:${r.color}"></span>${r.name}</th>
+      <td${c(r.score === best.score)}>${f(r.score, 1)}</td>
+      <td${c(r.deviation === best.dev)}>${f(r.deviation, 3)}<small>Final: ${f(r.finalWeight, 2)} kg</small></td>
+      <td${c(r.waste === best.waste)}>${f(r.waste, 0)}</td>
+      <td${c(r.episodes === best.ep)}>${r.episodes}</td>
+      <td>${f(r.ms, 1)} ms</td>
+    </tr>`).join('');
+    const w = res.reduce((a, b) => b.score > a.score ? b : a);
+    $('verdict').innerHTML = `Mayor bienestar: <b>${w.name}</b> (${f(w.score, 1)} pts).`;
+  }
+
+  function renderWeightChart(res) {
+    if (typeof Chart === 'undefined') return;
+    Chart.defaults.color = css('--muted'); Chart.defaults.borderColor = css('--line');
+    const noisy = $('showNoisy').checked;
+    const labels = Array.from({ length: P.days + 1 }, (_, i) => i);
+    const ds = res.map(r => ({ label: r.name, data: noisy ? r.weightsObs : r.weights, borderColor: r.color, backgroundColor: r.color, borderWidth: 2, pointRadius: P.days > 14 ? 0 : 2, tension: 0.2 }));
+    ds.push({ label: 'Ideal', data: labels.map(() => P.idealW), borderColor: css('--text'), borderDash: [4, 4], borderWidth: 1, pointRadius: 0 });
+    const data = { labels, datasets: ds };
+    if (weightChart) { weightChart.data = data; weightChart.update(); return; }
+    weightChart = new Chart($('weightChart'), {
+      type: 'line', data,
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
+        scales: { x: { title: { display: true, text: 'Día', font: { size: 11 } } }, y: { title: { display: true, text: 'Peso (kg)', font: { size: 11 } } } }
+      }
+    });
+  }
+
+  function catSVG() {
+    return `<svg viewBox="0 0 220 200" class="cat" role="img">
+      <path class="tail" d="M165 140 C210 130 212 85 188 72"/>
+      <ellipse class="body" cx="110" cy="132" rx="50" ry="34"/>
+      <ellipse class="belly" cx="110" cy="140" rx="30" ry="20"/>
+      <g class="ribs"><path d="M82 118 q10 7 22 0 M82 130 q10 7 22 0 M116 118 q10 7 22 0 M116 130 q10 7 22 0"/></g>
+      <ellipse class="paw" cx="80" cy="168" rx="14" ry="8"/><ellipse class="paw" cx="140" cy="168" rx="14" ry="8"/>
+      <polygon class="ear" points="80,62 84,32 106,50"/><polygon class="ear" points="140,62 136,32 114,50"/>
+      <circle class="head" cx="110" cy="80" r="34"/>
+      <ellipse class="eye" cx="97" cy="78" rx="5" ry="6.5"/><ellipse class="eye" cx="123" cy="78" rx="5" ry="6.5"/>
+      <circle class="shine" cx="99" cy="75" r="1.8"/><circle class="shine" cx="125" cy="75" r="1.8"/>
+      <polygon class="nose" points="106,87 114,87 110,92"/>
+      <path class="mouth happy" d="M100 94 Q110 103 120 94"/>
+      <path class="mouth sad" d="M100 101 Q110 92 120 101"/>
+      <ellipse class="mouth open" cx="110" cy="99" rx="6" ry="7"/>
+      <path class="whisk" d="M86 90 L62 86 M86 95 L62 98 M134 90 L158 86 M134 95 L158 98"/>
+      <g class="bubble"><rect x="128" y="8" width="80" height="30" rx="12"/><text x="168" y="28" text-anchor="middle">¡Miau!</text></g>
+    </svg>`;
+  }
+  function buildTwins() {
+    $('twins').innerHTML = Object.keys(NAMES).map(id => `<figure class="twin" data-id="${id}">
+      ${catSVG()}<figcaption><b>${NAMES[id]}</b><span class="badge"></span><small class="meta"></small></figcaption></figure>`).join('');
+  }
+  function stateOf(ratio, hunger) {
+    const w = ratio < 0.90 ? { k: 'under', t: 'Bajo' } : ratio <= 1.07 ? { k: 'ideal', t: 'Ideal' }
+      : ratio <= 1.20 ? { k: 'over', t: 'Sobrepeso' } : { k: 'obese', t: 'Obesidad' };
+    return Object.assign({ hungry: hunger >= 0.7 }, w);
+  }
+  function renderTwins(day) {
+    results.forEach(r => {
+      const el = document.querySelector(`.twin[data-id="${r.id}"]`);
+      const w = r.weights[day], hunger = day > 0 ? r.hungerNight[day - 1] : 0.4, ratio = w / P.idealW;
+      const st = stateOf(ratio, hunger);
+      const rx = clamp(50 + (ratio - 1) * 120, 38, 86), ry = clamp(34 + (ratio - 1) * 80, 26, 56);
+      const set = (sel, o) => el.querySelectorAll(sel).forEach(n => Object.entries(o).forEach(([k, v]) => n.setAttribute(k, v)));
+      set('.body', { rx, ry }); set('.belly', { rx: rx * 0.6, ry: ry * 0.58, cy: 132 + ry * 0.25 });
+      set('.paw', { cy: 132 + ry - 2 });
+      el.querySelector('.ribs').style.opacity = st.k === 'under' ? 1 : 0;
+      el.querySelector('.belly').style.opacity = st.k === 'over' || st.k === 'obese' ? 0.55 : 0.3;
+      el.querySelector('.bubble').style.display = st.hungry ? 'block' : 'none';
+      el.querySelector('.mouth.happy').style.display = !st.hungry && st.k !== 'under' ? 'block' : 'none';
+      el.querySelector('.mouth.sad').style.display = !st.hungry && st.k === 'under' ? 'block' : 'none';
+      el.querySelector('.mouth.open').style.display = st.hungry ? 'block' : 'none';
+      el.className = `twin ${st.k}${st.hungry ? ' hungry' : ''}`;
+      el.querySelector('.badge').textContent = st.t + (st.hungry ? ' · hambre' : '');
+      el.querySelector('.meta').textContent = `${f(w, 2)} kg`;
+    });
+    $('dayLabel').textContent = day;
+    renderUtilChart(Math.max(1, day));
+  }
+
+  function renderUtilChart(day) {
+    if (typeof Chart === 'undefined') return;
+    const log = results[2].log.filter(e => e.day === day - 1);
+    const colors = ['#6366f1', '#f59e0b', '#10b981'];
+    const ds = log.map((e, i) => ({
+      label: `${String(e.hour).padStart(2, '0')}:00 (${e.best}g)`, data: e.cands,
+      borderColor: colors[i], backgroundColor: colors[i], showLine: true, borderWidth: 1.8, tension: 0.2,
+      pointRadius: e.cands.map((_, j) => j === e.bestIdx ? 6 : 0),
+      pointStyle: e.cands.map((_, j) => j === e.bestIdx ? 'star' : 'circle')
+    }));
+    $('utilDay').textContent = day;
+    if (utilChart) { utilChart.data.datasets = ds; utilChart.update(); return; }
+    utilChart = new Chart($('utilChart'), {
+      type: 'scatter', data: { datasets: ds },
+      options: {
+        responsive: true, maintainAspectRatio: false, parsing: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } },
+        scales: { x: { type: 'linear', title: { display: true, text: 'Gramos (g)', font: { size: 11 } } }, y: { title: { display: true, text: 'U(g)', font: { size: 11 } } } }
+      }
+    });
+  }
+
+  function renderMC() {
+    const mc = monteCarlo(P, 20), ms = (s, d) => `${f(s.m, d)} ± ${f(s.sd, d)}`;
+    $('mcBody').innerHTML = Object.keys(NAMES).map(id => {
+      const s = mc.stats[id];
+      return `<tr><th scope="row">${NAMES[id]}</th><td>${ms(s.score, 1)}</td><td>${ms(s.deviation, 3)}</td><td>${ms(s.waste, 0)}</td><td>${ms(s.episodes, 1)}</td></tr>`;
+    }).join('');
+    $('mcNote').innerHTML = `Utilidad ganó en <b>${mc.wins} de ${mc.n}</b> semillas.`;
+    $('mcWrap').hidden = false;
+  }
+
+  function runAll() {
+    P = readParams();
+    results = runComparison(P);
+    renderTable(results);
+    renderWeightChart(results);
+    const dr = $('dayRange'); dr.max = P.days; dr.value = P.days;
+    renderTwins(P.days);
+    $('mcWrap').hidden = true;
+  }
+
+  buildTwins();
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', syncOutputs));
+  $('btnRun').addEventListener('click', runAll);$('btnMC').addEventListener('click', () => { if (!results) runAll(); P = readParams(); renderMC(); });
+  $('btnSeed').addEventListener('click', () => {$('seed').value = Math.floor(Math.random() * 9000) + 1; });
+  $('dayRange').addEventListener('input', e => renderTwins(+e.target.value));$('showNoisy').addEventListener('change', () => results && renderWeightChart(results));
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const [a, be, g] = b.dataset.preset.split(',');
+    $('alpha').value = a; $('beta').value = be; $('gamma').value = g;
+    syncOutputs(); runAll();
+  }));
+  syncOutputs(); runAll();
+}
+
+if (typeof document !== 'undefined') initUI();
+</script>
+</body>
+</html>
