@@ -1306,7 +1306,7 @@ function initUI() {
 
   function renderMLCards(comp) {
     const s = TRAINED.stats;
-    $('trainSummary').innerHTML = `AI-enhanced models trained on ${s.nSamples} decisions (${s.nSeeds} seeds: 100..${99 + s.nSeeds}) in ${f(s.trainMs, 1)} ms · Test Seed #${P.seed}.`;
+    $('trainSummary').innerHTML = ``;
     $('mlCards').innerHTML = `
       <div class="ml-metric">
         <div class="ml-metric-head">
