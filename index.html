@@ -3,132 +3,533 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Michi · Gemelo Digital de Alimentador Inteligente</title>
+<title>Michi · Gemelo Digital de Alimentador Inteligente (Parte 2 - ML)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --muted: #64748b; --line: #e2e8f0;
-  --accent: #4f46e5; --accent-light: #eef2ff; --good: #059669; --good-bg: #ecfdf5;
-  --warn: #d97706; --bad: #dc2626; --info: #2563eb; --fur: #f59e0b; --fur-dark: #b45309;
-  --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,0.04);
+  --lime: #BAF91A;
+  --lime-soft: #E2FF99;
+  --violet: #876DFF;
+  --dark: #101312;
+  --white: #FFFFFF;
+  
+  --bg: #F6F7F6;
+  --card: #FFFFFF;
+  --text: #101312;
+  --muted: #6C7270;
+  --line: #E8ECEA;
+  --surface-subtle: #F7F9F8;
+  --bar-empty: #E5E8E7;
+  --cat-belly: #FFFFFF;
+  --best-bg: #E2FF99;
+  --best-text: #101312;
+  --btn-primary-bg: radial-gradient(circle at 30% 120%, rgba(186, 249, 26, 0.45), #101312 75%);
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-border: #101312;
+  --twin-ideal-bg: linear-gradient(180deg, rgba(226, 255, 153, 0.25) 0%, #FFFFFF 100%);
+  
+  --good: #101312;
+  --good-bg: #E2FF99;
+  --warn: #D97706;
+  --bad: #DC2626;
+  --info: #876DFF;
+  --fur: #F59E0B;
+  --fur-dark: #B45309;
+  
+  --radius-xl: 24px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --shadow: 0 2px 12px rgba(16, 19, 18, 0.03);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #090d16; --card: #131825; --text: #f1f5f9; --muted: #94a3b8; --line: #1e293b;
-    --accent: #6366f1; --accent-light: #1e1b4b; --good-bg: rgba(5,150,105,0.15); --shadow: none;
-  }
+
+[data-theme="dark"] {
+  --bg: #0A0C0B;
+  --card: #131715;
+  --text: #F2F5F3;
+  --muted: #8E9893;
+  --line: #232A27;
+  --surface-subtle: #1A201D;
+  --bar-empty: #262E2A;
+  --cat-belly: #232A27;
+  --best-bg: rgba(186, 249, 26, 0.2);
+  --best-text: #BAF91A;
+  --btn-primary-bg: var(--lime);
+  --btn-primary-text: #101312;
+  --btn-primary-border: var(--lime);
+  --twin-ideal-bg: linear-gradient(180deg, rgba(186, 249, 26, 0.14) 0%, #131715 100%);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font: 14px/1.5 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
 [hidden] { display: none !important; }
 
-/* Header simple */
-header.top { max-width: 1240px; margin: 0 auto; padding: 28px 24px 12px; }
-header.top h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
-header.top p { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+header.top {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 28px 24px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header.top h1 {
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+header.top p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pill::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lime);
+  box-shadow: 0 0 0 3px rgba(186, 249, 26, 0.25);
+}
+.theme-toggle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
 
-/* Layout fluido */
-.layout { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 310px 1fr; gap: 20px; padding: 12px 24px 32px; align-items: start; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+.layout {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 325px 1fr;
+  gap: 20px;
+  padding: 10px 24px 36px;
+  align-items: start;
+}
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
 
-.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
-.panel { position: sticky; top: 16px; display: grid; gap: 14px; max-height: calc(100vh - 32px); overflow-y: auto; }
-.results { display: grid; gap: 16px; min-width: 0; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.panel {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 14px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.results { display: grid; gap: 18px; min-width: 0; }
 
-/* Controles simplificados */
-.group-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
-.field { display: grid; gap: 4px; margin-bottom: 10px; }
-.field label { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 500; }
-output { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
-input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
-input[type=number] { width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 0.85rem; }
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.icon-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--lime-soft);
+  color: var(--dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+h2 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0;
+}
+
+.hero-dark {
+  background: radial-gradient(circle at 22% 115%, rgba(186, 249, 26, 0.35) 0%, rgba(186, 249, 26, 0.08) 38%, #101312 72%), #101312;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+}
+.hero-dark h2 {
+  color: var(--white);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.hero-dark .sub {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.8rem;
+  margin-top: 3px;
+  margin-bottom: 16px;
+}
+.ml-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.ml-metric {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  backdrop-filter: blur(8px);
+}
+.ml-metric-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ml-metric-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  color: var(--lime);
+}
+.ml-metric h3 {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+.ml-metric .val {
+  font-size: 1.45rem;
+  font-weight: 500;
+  color: var(--white);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ml-metric .val small {
+  font-size: 0.78rem;
+  color: var(--lime);
+  font-weight: 500;
+  margin-left: 4px;
+}
+.ml-metric p {
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 4px;
+}
+
+.card-lime {
+  background: var(--lime-soft);
+  border: 1px solid rgba(186, 249, 26, 0.5);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  color: var(--dark);
+}
+.card-lime h2 {
+  color: var(--dark);
+}
+.card-lime .icon-box {
+  background: var(--white);
+  color: var(--dark);
+}
+
+.group-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.field { display: grid; gap: 5px; margin-bottom: 11px; }
+.field label { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 500; color: var(--text); }
+output { color: var(--dark); background: var(--lime-soft); padding: 1px 8px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--lime); cursor: pointer; }
+:root:not([data-theme="dark"]) input[type=range] { accent-color: var(--dark); }
+input[type=number] {
+  width: 100%; padding: 7px 12px; border: 1px solid var(--line);
+  border-radius: var(--radius-pill); background: var(--surface-subtle);
+  color: var(--text); font: inherit; font-size: 0.84rem;
+}
 .row { display: flex; gap: 6px; }
-.seg { display: flex; gap: 12px; font-size: 0.85rem; color: var(--muted); }
-.seg label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.seg { display: flex; gap: 12px; font-size: 0.83rem; color: var(--muted); }
+.seg label { display: flex; gap: 5px; align-items: center; cursor: pointer; color: var(--text); }
+.seg input[type=radio] { accent-color: var(--lime); }
+:root:not([data-theme="dark"]) .seg input[type=radio] { accent-color: var(--dark); }
 .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; }
+.hint b { color: var(--text); }
 
-/* Menú colapsable para parámetros finos */
-details.subpanel { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
-details.subpanel summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--muted); list-style: none; display: flex; justify-content: space-between; user-select: none; }
-details.subpanel summary::after { content: '▾'; font-size: 0.9rem; }
+details.subpanel { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 4px; }
+details.subpanel summary {
+  cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text);
+  list-style: none; display: flex; justify-content: space-between; user-select: none;
+}
+details.subpanel summary::after { content: '▾'; font-size: 0.9rem; color: var(--muted); }
 details.subpanel[open] summary::after { content: '▴'; }
-.sub-content { padding-top: 10px; }
+.sub-content { padding-top: 12px; }
 
-.presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; margin-bottom: 8px; }
-.actions { display: grid; gap: 6px; margin-top: 8px; }
-button { font: inherit; cursor: pointer; border-radius: 8px; padding: 7px 10px; border: 1px solid var(--line); transition: all .15s ease; }
-button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; padding: 9px; }
-button.secondary { background: transparent; color: var(--accent); border-color: var(--line); font-size: 0.82rem; }
-button.ghost { background: var(--card); color: var(--muted); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
-button:hover { filter: brightness(.95); }
+.presets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; margin-bottom: 10px; }
+.actions { display: grid; gap: 8px; margin-top: 10px; }
 
-/* Tabla limpia */
-h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; }
+button {
+  font: inherit; cursor: pointer; border-radius: var(--radius-pill);
+  padding: 8px 14px; border: 1px solid var(--line); transition: all .18s ease;
+}
+button.primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-border);
+  font-weight: 600;
+  padding: 11px 16px;
+}
+button.ml-btn {
+  background: var(--lime);
+  color: var(--dark);
+  border-color: var(--lime);
+  font-weight: 700;
+  padding: 9px 14px;
+}
+button.secondary {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--line);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+button.ghost {
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 11px;
+}
+button:hover { transform: translateY(-1px); filter: brightness(.97); }
+
 .table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 580px; }
-th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; }
-thead th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
-th[scope=row], thead th:first-child { text-align: left; }
-td.best { background: var(--good-bg); color: var(--good); font-weight: 700; border-radius: 6px; }
-td small { display: block; font-size: 0.7rem; color: var(--muted); font-weight: normal; }
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.verdict { margin: 10px 0 0; font-size: 0.8rem; color: var(--text); }
+table.opp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 0.82rem;
+  min-width: 640px;
+}
+table.opp-table thead tr {
+  background: var(--surface-subtle);
+}
+table.opp-table thead th {
+  padding: 11px 14px;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: right;
+  border: none;
+}
+table.opp-table thead th:first-child { text-align: left; border-radius: var(--radius-md) 0 0 var(--radius-md); }
+table.opp-table thead th:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
 
-/* Gráficos */
-.chart-box { position: relative; height: 260px; margin-top: 8px; }
+table.opp-table tbody tr {
+  background: var(--card);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+table.opp-table tbody tr:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+table.opp-table tbody th,
+table.opp-table tbody td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  vertical-align: middle;
+  color: var(--text);
+}
+table.opp-table tbody th[scope=row] {
+  text-align: left;
+  border-left: 1px solid var(--line);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  font-weight: 600;
+  color: var(--text);
+}
+table.opp-table tbody td:last-child {
+  border-right: 1px solid var(--line);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.seg-meter {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.seg-bar {
+  width: 5px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--bar-empty);
+}
+.seg-bar.on-lime { background: var(--lime); }
+.seg-bar.on-violet { background: var(--violet); }
+.seg-bar.on-dark { background: var(--dark); }
+[data-theme="dark"] .seg-bar.on-dark { background: #8E9893; }
+
+td.best {
+  background: var(--best-bg);
+  color: var(--best-text);
+  font-weight: 700;
+}
+td small { display: block; font-size: 0.7rem; color: var(--muted); font-weight: 400; }
+
+.agent-orb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 9px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.tag-b1 {
+  font-size: 0.66rem; font-weight: 600; padding: 2px 7px;
+  border-radius: var(--radius-pill); background: var(--surface-subtle);
+  color: var(--muted); border: 1px solid var(--line); margin-left: 6px;
+}
+.tag-b2 {
+  font-size: 0.66rem; font-weight: 700; padding: 2px 7px;
+  border-radius: var(--radius-pill); background: var(--lime-soft);
+  color: var(--dark); margin-left: 6px;
+}
+.verdict {
+  margin: 8px 0 0;
+  font-size: 0.81rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.verdict b { color: var(--text); }
+
+.chart-box { position: relative; height: 265px; margin-top: 6px; }
 .check { display: flex; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+.check input { accent-color: var(--lime); }
+:root:not([data-theme="dark"]) .check input { accent-color: var(--dark); }
 
-/* Gemelo digital */
-.scrub { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.scrub label { font-size: 0.8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
-.twins { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-.twin { padding: 12px 8px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
-.twin.ideal { border-color: var(--good); background: rgba(5,150,105,0.02); }
+.scrub { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.scrub label { font-size: 0.8rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+.twins { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; }
+.twin {
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  background: var(--card);
+}
+.twin.ideal { border-color: var(--lime); background: var(--twin-ideal-bg); }
 .twin.over { border-color: var(--warn); }
 .twin.obese { border-color: var(--bad); }
-.twin.under { border-color: var(--info); }
-.twin figcaption { display: grid; gap: 3px; justify-items: center; margin-top: 6px; }
-.badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--line); }
-.twin.ideal .badge { background: var(--good-bg); color: var(--good); }
-.twin.over .badge { background: rgba(217,119,6,0.15); color: var(--warn); }
-.twin.obese .badge { background: rgba(220,38,38,0.15); color: var(--bad); }
-.twin.under .badge { background: rgba(37,99,235,0.15); color: var(--info); }
+.twin.under { border-color: var(--violet); }
+.twin figcaption { display: grid; gap: 4px; justify-items: center; margin-top: 6px; font-size: 0.8rem; color: var(--text); }
+.badge { font-size: 0.68rem; font-weight: 600; padding: 2px 9px; border-radius: var(--radius-pill); background: var(--surface-subtle); color: var(--text); }
+.twin.ideal .badge { background: var(--lime); color: var(--dark); }
+.twin.over .badge { background: rgba(217,119,6,0.16); color: var(--warn); }
+.twin.obese .badge { background: rgba(220,38,38,0.16); color: var(--bad); }
+.twin.under .badge { background: rgba(135,109,255,0.2); color: var(--violet); }
 .meta { font-size: 0.72rem; color: var(--muted); }
-.cat { width: 100%; max-width: 140px; height: auto; }
+
+.cat { width: 100%; max-width: 112px; height: auto; }
 .cat .body, .cat .head, .cat .ear, .cat .paw { fill: var(--fur); }
-.cat .belly { fill: #fff; }
+.cat .belly { fill: var(--cat-belly); }
 .cat .tail { fill: none; stroke: var(--fur); stroke-width: 12; stroke-linecap: round; }
-.cat .eye { fill: #0f172a; }
+.cat .eye { fill: #101312; }
 .cat .shine { fill: #fff; }
 .cat .nose { fill: #f87171; }
-.cat .mouth { fill: none; stroke: #0f172a; stroke-width: 2.2; stroke-linecap: round; }
+.cat .mouth { fill: none; stroke: #101312; stroke-width: 2.2; stroke-linecap: round; }
 .cat .mouth.open { fill: #991b1b; stroke: none; }
-.cat .whisk { stroke: #0f172a; stroke-width: 1.2; opacity: .4; fill: none; }
+.cat .whisk { stroke: #101312; stroke-width: 1.2; opacity: .4; fill: none; }
 .cat .ribs { stroke: var(--fur-dark); stroke-width: 2; fill: none; stroke-linecap: round; }
 .cat .bubble rect { fill: #fff; stroke: var(--bad); stroke-width: 1.5; }
-.cat .bubble text { fill: var(--bad); font: 700 13px system-ui, sans-serif; }
+.cat .bubble text { fill: var(--bad); font: 700 13px 'Plus Jakarta Sans', sans-serif; }
 
-footer.foot { max-width: 1240px; margin: 0 auto; padding: 12px 24px 36px; color: var(--muted); font-size: 0.78rem; }
-footer.foot summary { cursor: pointer; font-weight: 600; }
-footer.foot ul { padding-left: 18px; margin-top: 6px; }
+footer.foot { max-width: 1300px; margin: 0 auto; padding: 12px 24px 36px; color: var(--muted); font-size: 0.78rem; }
+footer.foot summary { cursor: pointer; font-weight: 600; color: var(--text); }
+footer.foot ul { padding-left: 18px; margin-top: 8px; }
 </style>
 </head>
 <body>
 
 <header class="top">
-  <h1>Michi · Gemelo Digital</h1>
-  <p>Simulación fisiológica y comparativa de agentes inteligentes para alimentación de mascotas.</p>
+  <div>
+    <h1>Michi · Analytical Board</h1>
+    <p>Gemelo Digital y comparativa de Agentes Clásicos (Bloque 1) vs. Aprendizaje Automático (Bloque 2).</p>
+  </div>
+  <div class="header-actions">
+    <button type="button" id="btnTheme" class="theme-toggle" aria-label="Alternar modo oscuro">🌙 Modo oscuro</button>
+    <span class="pill">Equipo 10 · LosDonatellos</span>
+  </div>
 </header>
 
 <main class="layout">
-  <!-- Controles Limpios -->
   <aside class="panel card" aria-label="Controles">
     <form id="controls" onsubmit="return false">
-      <div class="group-title">Escenario básico</div>
+      <div class="group-title">1. Escenario de Prueba (Test)</div>
       
       <div class="field">
-        <label for="seed">Semilla aleatoria</label>
+        <label for="seed">Semilla Test (fuera de Train)</label>
         <div class="row">
           <input type="number" id="seed" min="1" max="999999" value="1">
           <button type="button" id="btnSeed" class="ghost">Azar</button>
@@ -161,9 +562,31 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
 
       <p class="hint" id="needInfo"></p>
 
-      <!-- Panel colapsable para no sobrecargar la vista -->
+      <details class="subpanel" open>
+        <summary>2. Hiperparámetros ML (Bloque 2)</summary>
+        <div class="sub-content">
+          <div class="field">
+            <label for="trainSeeds">Semillas Train (100..100+N) <output for="trainSeeds"></output></label>
+            <input type="range" id="trainSeeds" min="5" max="30" step="5" value="15" data-unit=" sem.">
+          </div>
+          <div class="field">
+            <label for="knnK">KNN · Vecinos (k) <output for="knnK"></output></label>
+            <input type="range" id="knnK" min="1" max="25" step="2" value="5">
+          </div>
+          <div class="field">
+            <label for="mlpEpochs">MLP · Épocas SGD <output for="mlpEpochs"></output></label>
+            <input type="range" id="mlpEpochs" min="20" max="200" step="20" value="80">
+          </div>
+          <div class="field">
+            <label for="mlpLr">MLP · Tasa aprendizaje (lr) <output for="mlpLr"></output></label>
+            <input type="range" id="mlpLr" min="0.005" max="0.1" step="0.005" value="0.02">
+          </div>
+          <button type="button" id="btnTrain" class="ml-btn" style="width:100%; margin-top:4px;">Re-entrenar Modelos ML</button>
+        </div>
+      </details>
+
       <details class="subpanel">
-        <summary>Pesos de Utilidad y Parámetros</summary>
+        <summary>3. Pesos Utilidad y Porciones</summary>
         <div class="sub-content">
           <div class="field">
             <label for="alpha">α (Peso) <output for="alpha"></output></label>
@@ -177,14 +600,12 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
             <label for="gamma">γ (Desperdicio) <output for="gamma"></output></label>
             <input type="range" id="gamma" min="0" max="10" step="0.5" value="1">
           </div>
-          
           <div class="presets">
             <button type="button" class="ghost" data-preset="3,2,1">Equilibrio</button>
             <button type="button" class="ghost" data-preset="8,0.5,0.5">Peso</button>
             <button type="button" class="ghost" data-preset="1,8,0.5">Saciedad</button>
             <button type="button" class="ghost" data-preset="3,2,8">No merma</button>
           </div>
-
           <div class="field">
             <label for="baseG">Porción fija base <output for="baseG"></output></label>
             <input type="range" id="baseG" min="20" max="150" step="5" value="100" data-unit=" g">
@@ -198,26 +619,38 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
 
       <div class="actions">
         <button type="button" id="btnRun" class="primary">Ejecutar Simulación</button>
-        <button type="button" id="btnMC" class="secondary">Monte Carlo (20 ejecuciones)</button>
+        <button type="button" id="btnMC" class="secondary">Monte Carlo Test (20 semillas)</button>
       </div>
     </form>
   </aside>
 
-  <!-- Resultados Visuales -->
   <section class="results">
-    <!-- Tabla -->
+    <article class="hero-dark">
+      <h2>Smart ML Model Distribution</h2>
+      <p class="sub" id="trainSummary">Entrenando modelos con semillas independientes...</p>
+      <div class="ml-grid" id="mlCards"></div>
+    </article>
+
     <article class="card">
-      <h2>Comparativa de Desempeño</h2>
+      <div class="card-head">
+        <div class="card-title">
+          <span class="icon-box">≡</span>
+          <h2>Comparativa de Desempeño (Bloque 1 + Bloque 2)</h2>
+        </div>
+        <span class="pill" style="font-size:0.72rem; padding:4px 12px;">6 Agentes Activos</span>
+      </div>
       <div class="table-wrap">
-        <table id="cmp">
+        <table id="cmp" class="opp-table">
           <thead>
             <tr>
-              <th scope="col">Agente</th>
+              <th scope="col">Agente / Técnica</th>
               <th scope="col">Bienestar (U)</th>
+              <th scope="col">Nivel Bienestar</th>
               <th scope="col">Desviación (kg)</th>
               <th scope="col">Desperdicio (g)</th>
               <th scope="col">Hambre ext.</th>
-              <th scope="col">Tiempo</th>
+              <th scope="col">MAE Ración</th>
+              <th scope="col">Tiempo Inf.</th>
             </tr>
           </thead>
           <tbody id="cmpBody"></tbody>
@@ -226,11 +659,13 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
       <p class="verdict" id="verdict"></p>
     </article>
 
-    <!-- Gemelos -->
     <article class="card">
       <div class="scrub">
-        <h2>Gemelos Digitales</h2>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div class="card-title">
+          <span class="icon-box">🐱</span>
+          <h2>Gemelos Digitales (6 Agentes)</h2>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; background:var(--surface-subtle); padding:6px 14px; border-radius:var(--radius-pill); border:1px solid var(--line);">
           <label for="dayRange">Día <b id="dayLabel">0</b></label>
           <input type="range" id="dayRange" min="0" max="14" step="1" value="14" style="width:130px;">
         </div>
@@ -238,27 +673,48 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
       <div class="twins" id="twins"></div>
     </article>
 
-    <!-- Gráfico de Peso -->
-    <article class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2>Evolución de Peso</h2>
-        <label class="check"><input type="checkbox" id="showNoisy"> Ruido sensor</label>
-      </div>
-      <div class="chart-box"><canvas id="weightChart"></canvas></div>
-    </article>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:18px;">
+      <article class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="icon-box">◔</span>
+            <h2>Evolución de Peso</h2>
+          </div>
+          <label class="check"><input type="checkbox" id="showNoisy"> Ruido sensor</label>
+        </div>
+        <div class="chart-box"><canvas id="weightChart"></canvas></div>
+      </article>
 
-    <!-- Gráfico Utilidad -->
-    <article class="card">
-      <h2>Curva de Utilidad U(g) · Día <span id="utilDay">1</span></h2>
-      <div class="chart-box"><canvas id="utilChart"></canvas></div>
-    </article>
+      <article class="card-lime">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="icon-box">ılı</span>
+            <h2>Fidelidad Imitación (KNN / MLP)</h2>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="imitationChart"></canvas></div>
+      </article>
+    </div>
 
-    <!-- Monte Carlo -->
     <article class="card" id="mcWrap" hidden>
-      <h2>Validación Monte Carlo (20 semillas)</h2>
+      <div class="card-head">
+        <div class="card-title">
+          <span class="icon-box">✦</span>
+          <h2>Validación Monte Carlo en Test (20 semillas nuevas: 1..20)</h2>
+        </div>
+      </div>
       <div class="table-wrap">
-        <table>
-          <thead><tr><th scope="col">Agente</th><th scope="col">Bienestar</th><th scope="col">Desviación</th><th scope="col">Desperdicio</th><th scope="col">Hambre ext.</th></tr></thead>
+        <table class="opp-table">
+          <thead>
+            <tr>
+              <th scope="col">Agente</th>
+              <th scope="col">Bienestar (U)</th>
+              <th scope="col">Desviación (kg)</th>
+              <th scope="col">Desperdicio (g)</th>
+              <th scope="col">Hambre ext.</th>
+              <th scope="col">Tiempo (ms)</th>
+            </tr>
+          </thead>
           <tbody id="mcBody"></tbody>
         </table>
       </div>
@@ -269,11 +725,11 @@ footer.foot ul { padding-left: 18px; margin-top: 6px; }
 
 <footer class="foot">
   <details>
-    <summary>Fórmulas fisiológicas de la simulación</summary>
+    <summary>Arquitectura Técnica Bloque 1 + Bloque 2</summary>
     <ul>
-      <li><b>RER:</b> $70 \times \text{peso}^{0.75}\text{ kcal/día}$.</li>
-      <li><b>Gasto total:</b> $\text{RER} \times 1.2 \times \text{factor temperatura} + \text{actividad}$.</li>
-      <li><b>Variación de peso:</b> $\Delta\text{peso} = (\text{kcal in} - \text{kcal out}) / 7700$.</li>
+      <li><b>Regresión Lineal (OLS):</b> Predice gasto calórico diario kcal_out = w0 + w1·peso + w2·temp + w3·act para reducir el error de estimación del Agente de Utilidad.</li>
+      <li><b>Agente KNN (k-Vecinos Más Cercanos):</b> Imita al Agente de Utilidad promediando las k raciones óptimas más cercanas en el espacio normalizado de 6 estados.</li>
+      <li><b>Agente MLP (Red Neuronal Multicapa 6→12→1):</b> Entrenado con descenso de gradiente estocástico (SGD) y activación LeakyReLU para inferir la ración en O(1) sin búsqueda exhaustiva.</li>
     </ul>
   </details>
 </footer>
@@ -367,43 +823,57 @@ class PetEnvironment {
     this.inEpisode = false; this.episodes = 0; this.begs = 0;
     this.totalWaste = 0; this.totalScore = 0;
     this.weights = [P.startW]; this.weightsObs = [P.startW]; this.hungerNight = []; this.intake = [];
-    this.acc = { eaten: 0, waste: 0 };
+    this.acc = { eaten: 0, waste: 0, kcalOut: 0 };
+    this.dailyRecords = [];
   }
   get done() { return this.t >= this.T; }
   ctx(d) { return dayContext(this.P, this.tape, d); }
   observe() {
     const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s, c = this.ctx(d);
+    const actObs = c.actKcal * (1 + 0.18 * this.tape.actObs[d]);
     return {
       day: d, hour: h, weightObs: s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[t],
+      idealW: this.P.idealW,
       bowl: s.bowl, bowlAge: s.bowlAge, hoursEmpty: s.hoursEmpty,
       hungerObs: clamp(s.hunger + 0.05 * this.tape.hunger[t], 0, 1), deficit: s.deficitEMA,
-      ctxEst: { tempFactor: c.tempFactor, actKcal: c.actKcal * (1 + 0.08 * this.tape.actObs[d]) }
+      temp: c.temp, actObs,
+      ctxEst: { tempFactor: c.tempFactor, actKcal: actObs }
     };
   }
   step(g) {
     const t = this.t, d = Math.floor(t / 24), h = t % 24, s = this.s;
     const r = stepPhysio(s, g, h, this.ctx(d), { eat: this.tape.eat[t], bite: this.tape.bite[t] });
-    this.acc.eaten += r.eaten; this.acc.waste += r.waste; this.totalWaste += r.waste;
+    this.acc.eaten += r.eaten; this.acc.waste += r.waste; this.acc.kcalOut += r.kcalOut;
+    this.totalWaste += r.waste;
     if (s.hunger >= 0.75 && s.bowl < 1 && this.tape.beg[t] < 0.5) this.begs++;
     if (!this.inEpisode && s.hunger >= CFG.EXTREME) { this.episodes++; this.inEpisode = true; }
     else if (this.inEpisode && s.hunger < CFG.EXTREME_RESET) this.inEpisode = false;
-    if (h === 23) this.closeDay();
+    if (h === 23) this.closeDay(d);
     this.t++;
     if (this.done) this.totalWaste += s.bowl;
   }
-  closeDay() {
-    const s = this.s, P = this.P;
+  closeDay(d) {
+    const s = this.s, P = this.P, c = this.ctx(d);
     this.totalScore += utilityValue(P, s.weight, s.hunger, this.acc.waste);
     this.weights.push(s.weight);
     this.weightsObs.push(s.weight + CFG.SENSOR_SIGMA * this.tape.sensor[this.t]);
     this.hungerNight.push(s.hunger); this.intake.push(this.acc.eaten);
-    this.acc = { eaten: 0, waste: 0 };
+    this.dailyRecords.push({
+      weight: s.weight, temp: c.temp,
+      actObs: c.actKcal * (1 + 0.18 * this.tape.actObs[d]),
+      kcalOutReal: this.acc.kcalOut,
+      kcalOutNoisy: kcalDay(s.weight, { tempFactor: c.tempFactor, actKcal: c.actKcal * (1 + 0.18 * this.tape.actObs[d]) })
+    });
+    this.acc = { eaten: 0, waste: 0, kcalOut: 0 };
   }
   summary() {
     const s = this.s, P = this.P;
-    return { score: this.totalScore, finalWeight: s.weight, deviation: Math.abs(s.weight - P.idealW),
+    return {
+      score: this.totalScore, finalWeight: s.weight, deviation: Math.abs(s.weight - P.idealW),
       waste: this.totalWaste, episodes: this.episodes, begs: this.begs, steps: this.t,
-      weights: this.weights, weightsObs: this.weightsObs, hungerNight: this.hungerNight, intake: this.intake };
+      weights: this.weights, weightsObs: this.weightsObs, hungerNight: this.hungerNight,
+      intake: this.intake, dailyRecords: this.dailyRecords
+    };
   }
 }
 
@@ -415,11 +885,14 @@ class ReflexAgent {
   constructor(P) { this.P = P; this.evals = 0; }
   decide(o) { return o.hoursEmpty > 4 ? this.P.contG : 0; }
 }
-function predictOutcome(o, g) {
+function predictOutcome(o, g, customKcalDay = null) {
   const s = { weight: o.weightObs, hunger: o.hungerObs, bowl: o.bowl, bowlAge: o.bowlAge, hoursEmpty: o.hoursEmpty, deficitEMA: o.deficit };
   let waste = 0;
+  const ctx = customKcalDay !== null
+    ? { tempFactor: 1, actKcal: Math.max(0, customKcalDay - RER(o.weightObs) * CFG.MAINT_FACTOR) }
+    : o.ctxEst;
   for (let h = o.hour; h < 24; h++) {
-    const r = stepPhysio(s, CFG.UTIL_HOURS.includes(h) ? g : 0, h, o.ctxEst, null);
+    const r = stepPhysio(s, CFG.UTIL_HOURS.includes(h) ? g : 0, h, ctx, null);
     waste += r.waste;
   }
   waste += s.bowl;
@@ -429,42 +902,333 @@ class UtilityAgent {
   constructor(P) { this.P = P; this.evals = 0; this.log = []; }
   decide(o) {
     if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
-    let bestG = 0, bestU = -Infinity, bestIdx = 0; const cands = [];
+    let bestG = 0, bestU = -Infinity;
     for (let g = 0; g <= CFG.CAND_MAX; g += CFG.CAND_STEP) {
-      const pr = predictOutcome(o, g);
+      const pr = predictOutcome(o, g, null);
       const u = utilityValue(this.P, pr.weight, pr.hunger, pr.waste);
       this.evals++;
-      cands.push({ x: g, y: u, w: pr.weight, h: pr.hunger, waste: pr.waste });
-      if (u > bestU) { bestU = u; bestG = g; bestIdx = cands.length - 1; }
+      if (u > bestU) { bestU = u; bestG = g; }
     }
-    this.log.push({ day: o.day, hour: o.hour, best: bestG, bestIdx, cands });
+    this.log.push({ day: o.day, hour: o.hour, best: bestG, obs: o });
     return bestG;
   }
 }
 
-function makeAgents(P) {
+class LinearCalorieRegressor {
+  constructor() {
+    this.w = [200, 30, -1, 0.8];
+    this.means = [0, 4.5, 22, 30];
+    this.stds = [1, 1, 4, 15];
+  }
+  fit(records, epochs = 300, lr = 0.05) {
+    if (!records.length) return;
+    const cols = ['weight', 'temp', 'actObs'];
+    cols.forEach((c, j) => {
+      const vals = records.map(r => r[c]);
+      const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const sd = Math.sqrt(vals.reduce((a, b) => a + (b - m) ** 2, 0) / vals.length) || 1;
+      this.means[j + 1] = m;
+      this.stds[j + 1] = sd;
+    });
+    const yMean = records.reduce((a, r) => a + r.kcalOutReal, 0) / records.length;
+    this.w = [yMean, 0, 0, 0];
+
+    for (let ep = 0; ep < epochs; ep++) {
+      let g0 = 0, g1 = 0, g2 = 0, g3 = 0;
+      for (const r of records) {
+        const x1 = (r.weight - this.means[1]) / this.stds[1];
+        const x2 = (r.temp - this.means[2]) / this.stds[2];
+        const x3 = (r.actObs - this.means[3]) / this.stds[3];
+        const pred = this.w[0] + this.w[1] * x1 + this.w[2] * x2 + this.w[3] * x3;
+        const err = pred - r.kcalOutReal;
+        g0 += err; g1 += err * x1; g2 += err * x2; g3 += err * x3;
+      }
+      const n = records.length;
+      this.w[0] -= (lr / n) * g0;
+      this.w[1] -= (lr / n) * g1;
+      this.w[2] -= (lr / n) * g2;
+      this.w[3] -= (lr / n) * g3;
+    }
+  }
+  predict(weight, temp, actObs) {
+    const x1 = (weight - this.means[1]) / this.stds[1];
+    const x2 = (temp - this.means[2]) / this.stds[2];
+    const x3 = (actObs - this.means[3]) / this.stds[3];
+    return this.w[0] + this.w[1] * x1 + this.w[2] * x2 + this.w[3] * x3;
+  }
+}
+
+class UtilityRegAgent {
+  constructor(P, regressor) { this.P = P; this.reg = regressor; this.evals = 0; }
+  decide(o) {
+    if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
+    const kcalPred = this.reg.predict(o.weightObs, o.temp, o.actObs);
+    let bestG = 0, bestU = -Infinity;
+    for (let g = 0; g <= CFG.CAND_MAX; g += CFG.CAND_STEP) {
+      const pr = predictOutcome(o, g, kcalPred);
+      const u = utilityValue(this.P, pr.weight, pr.hunger, pr.waste);
+      this.evals++;
+      if (u > bestU) { bestU = u; bestG = g; }
+    }
+    return bestG;
+  }
+}
+
+function extractFeatures(o) {
   return [
-    { id: 'base', name: 'Modo Base (fijo)', color: '#64748b', agent: new FixedScheduleAgent(P) },
-    { id: 'reflex', name: 'Reflejo Simple', color: '#f59e0b', agent: new ReflexAgent(P) },
-    { id: 'util', name: 'Basado en Utilidad', color: '#10b981', agent: new UtilityAgent(P) }
+    o.weightObs - o.idealW,
+    o.hungerObs,
+    o.bowl / 100,
+    o.hoursEmpty / 12,
+    o.deficit / 100,
+    o.hour / 24
   ];
 }
+
+class KNNImitatorAgent {
+  constructor(P, k = 5) {
+    this.P = P; this.k = k;
+    this.X = []; this.y = [];
+    this.min = []; this.range = [];
+  }
+  fit(samples) {
+    this.X = samples.map(s => s.x);
+    this.y = samples.map(s => s.y);
+    const dim = this.X[0].length;
+    this.min = Array(dim).fill(Infinity);
+    this.range = Array(dim).fill(1);
+    for (let j = 0; j < dim; j++) {
+      let mn = Infinity, mx = -Infinity;
+      for (const row of this.X) {
+        if (row[j] < mn) mn = row[j];
+        if (row[j] > mx) mx = row[j];
+      }
+      this.min[j] = mn;
+      this.range[j] = (mx - mn) || 1;
+    }
+    this.Xnorm = this.X.map(row => row.map((v, j) => (v - this.min[j]) / this.range[j]));
+  }
+  predictFromFeatures(feat) {
+    const fn = feat.map((v, j) => (v - this.min[j]) / this.range[j]);
+    const dists = this.Xnorm.map((row, idx) => {
+      let d2 = 0;
+      for (let j = 0; j < fn.length; j++) d2 += (row[j] - fn[j]) ** 2;
+      return { d2, y: this.y[idx] };
+    });
+    dists.sort((a, b) => a.d2 - b.d2);
+    const topK = dists.slice(0, this.k);
+    let num = 0, den = 0;
+    for (const item of topK) {
+      const w = 1 / (Math.sqrt(item.d2) + 1e-4);
+      num += w * item.y;
+      den += w;
+    }
+    const raw = num / den;
+    return clamp(Math.round(raw / CFG.CAND_STEP) * CFG.CAND_STEP, 0, CFG.CAND_MAX);
+  }
+  decide(o) {
+    if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
+    return this.predictFromFeatures(extractFeatures(o));
+  }
+}
+
+class MLPImitatorAgent {
+  constructor(P, hidden = 12, epochs = 80, lr = 0.02) {
+    this.P = P; this.hidden = hidden; this.epochs = epochs; this.lr = lr;
+    this.inDim = 6;
+    this.means = Array(6).fill(0);
+    this.stds = Array(6).fill(1);
+    this.initWeights();
+  }
+  initWeights() {
+    const r = mulberry32(42);
+    const randW = scale => (r() * 2 - 1) * scale;
+    this.W1 = Array.from({ length: this.hidden }, () => Array.from({ length: this.inDim }, () => randW(0.4)));
+    this.b1 = Array(this.hidden).fill(0.05);
+    this.W2 = Array.from({ length: this.hidden }, () => randW(0.4));
+    this.b2 = 0.5;
+  }
+  norm(feat) {
+    return feat.map((v, j) => (v - this.means[j]) / this.stds[j]);
+  }
+  forward(xNorm) {
+    const z1 = Array(this.hidden);
+    const a1 = Array(this.hidden);
+    for (let i = 0; i < this.hidden; i++) {
+      let sum = this.b1[i];
+      for (let j = 0; j < this.inDim; j++) sum += this.W1[i][j] * xNorm[j];
+      z1[i] = sum;
+      a1[i] = sum > 0 ? sum : 0.01 * sum;
+    }
+    let out = this.b2;
+    for (let i = 0; i < this.hidden; i++) out += this.W2[i] * a1[i];
+    return { z1, a1, out };
+  }
+  fit(samples) {
+    this.initWeights();
+    for (let j = 0; j < this.inDim; j++) {
+      const vals = samples.map(s => s.x[j]);
+      const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const sd = Math.sqrt(vals.reduce((a, b) => a + (b - m) ** 2, 0) / vals.length) || 1;
+      this.means[j] = m;
+      this.stds[j] = sd;
+    }
+    const r = mulberry32(99);
+    for (let ep = 0; ep < this.epochs; ep++) {
+      const order = samples.map((_, i) => i).sort(() => r() - 0.5);
+      for (const idx of order) {
+        const xNorm = this.norm(samples[idx].x);
+        const yTarget = samples[idx].y / CFG.CAND_MAX;
+        const { z1, a1, out } = this.forward(xNorm);
+        const dOut = (out - yTarget);
+
+        for (let i = 0; i < this.hidden; i++) {
+          const dA1 = dOut * this.W2[i];
+          const dZ1 = z1[i] > 0 ? dA1 : 0.01 * dA1;
+          this.W2[i] -= this.lr * dOut * a1[i];
+          this.b1[i] -= this.lr * dZ1;
+          for (let j = 0; j < this.inDim; j++) {
+            this.W1[i][j] -= this.lr * dZ1 * xNorm[j];
+          }
+        }
+        this.b2 -= this.lr * dOut;
+      }
+    }
+  }
+  predictFromFeatures(feat) {
+    const { out } = this.forward(this.norm(feat));
+    const grams = out * CFG.CAND_MAX;
+    return clamp(Math.round(grams / CFG.CAND_STEP) * CFG.CAND_STEP, 0, CFG.CAND_MAX);
+  }
+  decide(o) {
+    if (!CFG.UTIL_HOURS.includes(o.hour)) return 0;
+    return this.predictFromFeatures(extractFeatures(o));
+  }
+}
+
+let TRAINED = { reg: null, knn: null, mlp: null, stats: null };
+
+function trainBlock2Models(P) {
+  const nSeeds = +document.getElementById('trainSeeds').value;
+  const k = +document.getElementById('knnK').value;
+  const epochs = +document.getElementById('mlpEpochs').value;
+  const lr = +document.getElementById('mlpLr').value;
+
+  const t0 = performance.now();
+  const samples = [];
+  const dailyData = [];
+
+  for (let i = 0; i < nSeeds; i++) {
+    const pTrain = Object.assign({}, P, {
+      seed: 100 + i,
+      startW: 3.4 + (i % 7) * 0.45,
+      activity: 0.7 + (i % 4) * 0.35
+    });
+    const tape = makeTape(pTrain.seed, 14);
+    const teacher = new UtilityAgent(pTrain);
+    const env = new PetEnvironment(pTrain, tape);
+    while (!env.done) env.step(teacher.decide(env.observe()));
+    const sum = env.summary();
+    dailyData.push(...sum.dailyRecords);
+    for (const entry of teacher.log) {
+      samples.push({ x: extractFeatures(entry.obs), y: entry.best });
+    }
+  }
+
+  const reg = new LinearCalorieRegressor();
+  reg.fit(dailyData);
+
+  const knn = new KNNImitatorAgent(P, k);
+  knn.fit(samples);
+
+  const mlp = new MLPImitatorAgent(P, 12, epochs, lr);
+  mlp.fit(samples);
+
+  const trainMs = performance.now() - t0;
+
+  let maeNoisy = 0, maeReg = 0;
+  for (const r of dailyData) {
+    maeNoisy += Math.abs(r.kcalOutNoisy - r.kcalOutReal);
+    maeReg += Math.abs(reg.predict(r.weight, r.temp, r.actObs) - r.kcalOutReal);
+  }
+  maeNoisy /= dailyData.length;
+  maeReg /= dailyData.length;
+
+  let trainMaeKnn = 0, trainMaeMlp = 0;
+  for (const s of samples) {
+    trainMaeKnn += Math.abs(knn.predictFromFeatures(s.x) - s.y);
+    trainMaeMlp += Math.abs(mlp.predictFromFeatures(s.x) - s.y);
+  }
+  trainMaeKnn /= samples.length;
+  trainMaeMlp /= samples.length;
+
+  TRAINED = {
+    reg, knn, mlp,
+    stats: { nSeeds, nSamples: samples.length, trainMs, maeNoisy, maeReg, trainMaeKnn, trainMaeMlp, k, epochs, lr }
+  };
+}
+
+function makeAgents(P) {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  TRAINED.knn.P = P; TRAINED.knn.k = +document.getElementById('knnK').value;
+  TRAINED.mlp.P = P;
+  return [
+    { id: 'base', name: 'Modo Base (fijo)', block: 'B1', color: '#94A3B8', orb: 'radial-gradient(circle at 30% 30%, #CBD5E1, #475569)', meterClass: 'on-dark', agent: new FixedScheduleAgent(P) },
+    { id: 'reflex', name: 'Reflejo Simple', block: 'B1', color: '#F59E0B', orb: 'radial-gradient(circle at 30% 30%, #FDE68A, #D97706)', meterClass: 'on-dark', agent: new ReflexAgent(P) },
+    { id: 'util', name: 'Basado en Utilidad', block: 'B1', color: isDark ? '#F2F5F3' : '#101312', orb: 'radial-gradient(circle at 30% 30%, #E2FF99, #101312)', meterClass: 'on-lime', agent: new UtilityAgent(P) },
+    { id: 'util_reg', name: 'Utilidad + Regresión', block: 'B2', color: '#65A30D', orb: 'radial-gradient(circle at 30% 30%, #BAF91A, #365314)', meterClass: 'on-lime', agent: new UtilityRegAgent(P, TRAINED.reg) },
+    { id: 'knn', name: `Imitador KNN (k=${TRAINED.knn.k})`, block: 'B2', color: '#876DFF', orb: 'radial-gradient(circle at 30% 30%, #C4B5FD, #876DFF)', meterClass: 'on-violet', agent: TRAINED.knn },
+    { id: 'mlp', name: 'Imitador MLP (Red)', block: 'B2', color: '#4F46E5', orb: 'radial-gradient(circle at 30% 30%, #E2FF99, #876DFF)', meterClass: 'on-violet', agent: TRAINED.mlp }
+  ];
+}
+
 function runSimulation(agent, P, tape) {
   const env = new PetEnvironment(P, tape);
   const t0 = performance.now();
   while (!env.done) env.step(agent.decide(env.observe()));
-  return Object.assign(env.summary(), { ms: performance.now() - t0, evals: agent.evals, log: agent.log || null });
+  const ms = performance.now() - t0;
+  return Object.assign(env.summary(), { ms, log: agent.log || null });
 }
+
 function runComparison(P) {
   const tape = makeTape(P.seed, P.days);
-  return makeAgents(P).map(a => Object.assign({ id: a.id, name: a.name, color: a.color }, runSimulation(a.agent, P, tape)));
+  const agents = makeAgents(P);
+  const res = agents.map(a => Object.assign({
+    id: a.id, name: a.name, block: a.block, color: a.color, orb: a.orb, meterClass: a.meterClass
+  }, runSimulation(a.agent, P, tape)));
+
+  const teacherLog = res.find(r => r.id === 'util').log;
+  const imitationPairs = teacherLog.map(entry => {
+    const feat = extractFeatures(entry.obs);
+    return {
+      teacher: entry.best,
+      knn: TRAINED.knn.predictFromFeatures(feat),
+      mlp: TRAINED.mlp.predictFromFeatures(feat)
+    };
+  });
+  const maeKnnTest = imitationPairs.reduce((a, p) => a + Math.abs(p.knn - p.teacher), 0) / imitationPairs.length;
+  const maeMlpTest = imitationPairs.reduce((a, p) => a + Math.abs(p.mlp - p.teacher), 0) / imitationPairs.length;
+
+  res.forEach(r => {
+    if (r.id === 'util') r.maeDose = 0;
+    else if (r.id === 'knn') r.maeDose = maeKnnTest;
+    else if (r.id === 'mlp') r.maeDose = maeMlpTest;
+    else r.maeDose = null;
+  });
+
+  return { res, imitationPairs, maeKnnTest, maeMlpTest };
 }
+
 function monteCarlo(P, n = 20) {
-  const acc = { base: [], reflex: [], util: [] }; let wins = 0;
+  const ids = ['base', 'reflex', 'util', 'util_reg', 'knn', 'mlp'];
+  const acc = Object.fromEntries(ids.map(id => [id, []]));
+  let winsB2 = 0;
   for (let i = 0; i < n; i++) {
-    const res = runComparison(Object.assign({}, P, { seed: P.seed + i }));
+    const { res } = runComparison(Object.assign({}, P, { seed: 1 + i }));
     res.forEach(r => acc[r.id].push(r));
-    if (res[2].score >= Math.max(res[0].score, res[1].score)) wins++;
+    const bestB1 = Math.max(res[0].score, res[1].score, res[2].score);
+    const bestB2 = Math.max(res[3].score, res[4].score, res[5].score);
+    if (bestB2 >= bestB1) winsB2++;
   }
   const st = (arr, k) => {
     const m = arr.reduce((a, r) => a + r[k], 0) / arr.length;
@@ -472,19 +1236,50 @@ function monteCarlo(P, n = 20) {
     return { m, sd };
   };
   const out = {};
-  for (const id of Object.keys(acc)) {
-    out[id] = { score: st(acc[id], 'score'), deviation: st(acc[id], 'deviation'), waste: st(acc[id], 'waste'), episodes: st(acc[id], 'episodes') };
+  for (const id of ids) {
+    out[id] = {
+      name: acc[id][0].name,
+      orb: acc[id][0].orb,
+      score: st(acc[id], 'score'),
+      deviation: st(acc[id], 'deviation'),
+      waste: st(acc[id], 'waste'),
+      episodes: st(acc[id], 'episodes'),
+      ms: st(acc[id], 'ms')
+    };
   }
-  return { n, wins, stats: out };
+  return { n, winsB2, stats: out };
 }
 
-const NAMES = { base: 'Modo Base', reflex: 'Reflejo Simple', util: 'Basado en Utilidad' };
 const f = (x, d = 2) => x.toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 function initUI() {
   const $ = id => document.getElementById(id);
-  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  let results = null, P = null, weightChart = null, utilChart = null;
+  let compData = null, P = null, weightChart = null, imitationChart = null;
+
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+      $('btnTheme').textContent = '☀️ Modo claro';
+    } else {
+      delete document.documentElement.dataset.theme;
+      $('btnTheme').textContent = '🌙 Modo oscuro';
+    }
+    localStorage.setItem('michi-theme', theme);
+    if (compData) {
+      compData.res.forEach(r => {
+        if (r.id === 'util') r.color = theme === 'dark' ? '#F2F5F3' : '#101312';
+      });
+      renderWeightChart(compData.res);
+    }
+  }
+
+  const savedTheme = localStorage.getItem('michi-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+
+  $('btnTheme').addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+  });
 
   function readParams() {
     return {
@@ -496,6 +1291,7 @@ function initUI() {
       baseG: +$('baseG').value, contG: +$('contG').value
     };
   }
+
   function syncOutputs() {
     document.querySelectorAll('input[type="range"]').forEach(inp => {
       const out = document.querySelector(`output[for="${inp.id}"]`);
@@ -508,39 +1304,170 @@ function initUI() {
     $('needInfo').innerHTML = `Gasto est.: <b>${f(need, 0)} kcal/d</b> ≈ <b>${f(need / CFG.KCAL_PER_G, 0)} g/día</b>.`;
   }
 
+  function renderMLCards(comp) {
+    const s = TRAINED.stats;
+    $('trainSummary').innerHTML = `AI-enhanced models trained on ${s.nSamples} decisions (${s.nSeeds} seeds: 100..${99 + s.nSeeds}) in ${f(s.trainMs, 1)} ms · Test Seed #${P.seed}.`;
+    $('mlCards').innerHTML = `
+      <div class="ml-metric">
+        <div class="ml-metric-head">
+          <span class="ml-metric-icon">∑</span>
+          <h3>Regresión Calórica (OLS)</h3>
+        </div>
+        <div class="val">${f(s.maeReg, 1)} <small>kcal MAE</small></div>
+        <p>Vs. ${f(s.maeNoisy, 1)} kcal con ruido crudo de sensor.</p>
+      </div>
+      <div class="ml-metric">
+        <div class="ml-metric-head">
+          <span class="ml-metric-icon">◈</span>
+          <h3>Imitador KNN (k=${s.k})</h3>
+        </div>
+        <div class="val">${f(comp.maeKnnTest, 1)} <small>g MAE</small></div>
+        <p>Error Test frente al maestro (Train: ${f(s.trainMaeKnn, 1)} g).</p>
+      </div>
+      <div class="ml-metric">
+        <div class="ml-metric-head">
+          <span class="ml-metric-icon">⚡</span>
+          <h3>Imitador MLP (6→12→1)</h3>
+        </div>
+        <div class="val">${f(comp.maeMlpTest, 1)} <small>g MAE</small></div>
+        <p>Inferencia O(1) (${s.epochs} épocas, lr=${s.lr}).</p>
+      </div>
+    `;
+  }
+
+  function buildMeter(score, minScore, maxScore, cls) {
+    const ratio = maxScore > minScore ? (score - minScore) / (maxScore - minScore) : 1;
+    const filled = Math.max(1, Math.min(8, Math.round(ratio * 8)));
+    let bars = '';
+    for (let i = 0; i < 8; i++) {
+      bars += `<span class="seg-bar ${i < filled ? cls : ''}"></span>`;
+    }
+    return `<div class="seg-meter" title="Nivel relativo: ${filled}/8">${bars}</div>`;
+  }
+
   function renderTable(res) {
+    const scores = res.map(r => r.score);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
     const best = {
-      score: Math.max(...res.map(r => r.score)), dev: Math.min(...res.map(r => r.deviation)),
-      waste: Math.min(...res.map(r => r.waste)), ep: Math.min(...res.map(r => r.episodes))
+      score: maxScore,
+      dev: Math.min(...res.map(r => r.deviation)),
+      waste: Math.min(...res.map(r => r.waste)),
+      ep: Math.min(...res.map(r => r.episodes)),
+      ms: Math.min(...res.filter(r => r.block === 'B2').map(r => r.ms))
     };
     const c = ok => ok ? ' class="best"' : '';
     $('cmpBody').innerHTML = res.map(r => `<tr>
-      <th scope="row"><span class="dot" style="background:${r.color}"></span>${r.name}</th>
+      <th scope="row">
+        <span class="agent-orb" style="background:${r.orb}"></span>${r.name}
+        <span class="${r.block === 'B2' ? 'tag-b2' : 'tag-b1'}">${r.block}</span>
+      </th>
       <td${c(r.score === best.score)}>${f(r.score, 1)}</td>
+      <td>${buildMeter(r.score, minScore, maxScore, r.meterClass)}</td>
       <td${c(r.deviation === best.dev)}>${f(r.deviation, 3)}<small>Final: ${f(r.finalWeight, 2)} kg</small></td>
       <td${c(r.waste === best.waste)}>${f(r.waste, 0)}</td>
       <td${c(r.episodes === best.ep)}>${r.episodes}</td>
-      <td>${f(r.ms, 1)} ms</td>
+      <td>${r.maeDose !== null ? f(r.maeDose, 1) + ' g' : '—'}</td>
+      <td${c(r.block === 'B2' && r.ms === best.ms)}>${f(r.ms, 2)} ms</td>
     </tr>`).join('');
+
     const w = res.reduce((a, b) => b.score > a.score ? b : a);
-    $('verdict').innerHTML = `Mayor bienestar: <b>${w.name}</b> (${f(w.score, 1)} pts).`;
+    const utilMs = res.find(r => r.id === 'util').ms;
+    const mlpMs = res.find(r => r.id === 'mlp').ms;
+    const speedup = utilMs > 0 && mlpMs > 0 ? (utilMs / mlpMs).toFixed(1) : '—';
+    $('verdict').innerHTML = `<span class="icon-box" style="width:22px;height:22px;font-size:0.75rem;">✓</span> Mayor bienestar: <b>${w.name}</b> (${f(w.score, 1)} pts) · Inferencia MLP <b>${speedup}×</b> más rápida que Utilidad.`;
   }
 
   function renderWeightChart(res) {
     if (typeof Chart === 'undefined') return;
-    Chart.defaults.color = css('--muted'); Chart.defaults.borderColor = css('--line');
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const textColor = isDark ? '#8E9893' : '#6C7270';
+    const gridColor = isDark ? '#232A27' : '#E8ECEA';
+
     const noisy = $('showNoisy').checked;
     const labels = Array.from({ length: P.days + 1 }, (_, i) => i);
-    const ds = res.map(r => ({ label: r.name, data: noisy ? r.weightsObs : r.weights, borderColor: r.color, backgroundColor: r.color, borderWidth: 2, pointRadius: P.days > 14 ? 0 : 2, tension: 0.2 }));
-    ds.push({ label: 'Ideal', data: labels.map(() => P.idealW), borderColor: css('--text'), borderDash: [4, 4], borderWidth: 1, pointRadius: 0 });
-    const data = { labels, datasets: ds };
-    if (weightChart) { weightChart.data = data; weightChart.update(); return; }
+    const ds = res.map(r => ({
+      label: r.name,
+      data: noisy ? r.weightsObs : r.weights,
+      borderColor: r.color,
+      backgroundColor: r.color,
+      borderWidth: r.block === 'B2' ? 2.6 : 1.8,
+      borderDash: r.id === 'base' ? [4, 4] : [],
+      pointRadius: P.days > 14 ? 0 : 2.5,
+      tension: 0.25
+    }));
+    ds.push({
+      label: 'Peso Ideal',
+      data: labels.map(() => P.idealW),
+      borderColor: '#BAF91A',
+      borderWidth: 2.5,
+      pointRadius: 0
+    });
+    if (weightChart) {
+      weightChart.data = { labels, datasets: ds };
+      weightChart.options.plugins.legend.labels.color = textColor;
+      weightChart.options.scales.x.ticks.color = textColor;
+      weightChart.options.scales.x.title.color = textColor;
+      weightChart.options.scales.y.ticks.color = textColor;
+      weightChart.options.scales.y.title.color = textColor;
+      weightChart.options.scales.y.grid.color = gridColor;
+      weightChart.update();
+      return;
+    }
     weightChart = new Chart($('weightChart'), {
-      type: 'line', data,
+      type: 'line',
+      data: { labels, datasets: ds },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
-        scales: { x: { title: { display: true, text: 'Día', font: { size: 11 } } }, y: { title: { display: true, text: 'Peso (kg)', font: { size: 11 } } } }
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textColor }, title: { display: true, text: 'Día', color: textColor } },
+          y: { grid: { color: gridColor }, ticks: { color: textColor }, title: { display: true, text: 'Peso (kg)', color: textColor } }
+        }
+      }
+    });
+  }
+
+  function renderImitationChart(pairs) {
+    if (typeof Chart === 'undefined') return;
+    const ds = [
+      {
+        label: 'Identidad (y = x)',
+        data: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+        borderColor: '#101312',
+        borderDash: [4, 4],
+        borderWidth: 1.5,
+        showLine: true,
+        pointRadius: 0
+      },
+      {
+        label: 'KNN Imitador (g)',
+        data: pairs.map(p => ({ x: p.teacher, y: p.knn })),
+        borderColor: '#876DFF',
+        backgroundColor: '#876DFF',
+        pointRadius: 5
+      },
+      {
+        label: 'MLP Imitador (g)',
+        data: pairs.map(p => ({ x: p.teacher, y: p.mlp })),
+        borderColor: '#101312',
+        backgroundColor: '#101312',
+        pointRadius: 4.5
+      }
+    ];
+    if (imitationChart) { imitationChart.data.datasets = ds; imitationChart.update(); return; }
+    imitationChart = new Chart($('imitationChart'), {
+      type: 'scatter',
+      data: { datasets: ds },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: '#101312', usePointStyle: true, boxWidth: 8, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } } },
+        scales: {
+          x: { grid: { color: 'rgba(16,19,18,0.08)' }, title: { display: true, text: 'Ración Maestro Utilidad (g)', color: '#101312' }, ticks: { color: '#101312' }, min: 0 },
+          y: { grid: { color: 'rgba(16,19,18,0.08)' }, title: { display: true, text: 'Ración Predicha (g)', color: '#101312' }, ticks: { color: '#101312' }, min: 0 }
+        }
       }
     });
   }
@@ -564,18 +1491,22 @@ function initUI() {
       <g class="bubble"><rect x="128" y="8" width="80" height="30" rx="12"/><text x="168" y="28" text-anchor="middle">¡Miau!</text></g>
     </svg>`;
   }
-  function buildTwins() {
-    $('twins').innerHTML = Object.keys(NAMES).map(id => `<figure class="twin" data-id="${id}">
-      ${catSVG()}<figcaption><b>${NAMES[id]}</b><span class="badge"></span><small class="meta"></small></figcaption></figure>`).join('');
+
+  function buildTwins(res) {
+    $('twins').innerHTML = res.map(r => `<figure class="twin" data-id="${r.id}">
+      ${catSVG()}<figcaption><b>${r.name}</b><span class="badge"></span><small class="meta"></small></figcaption></figure>`).join('');
   }
+
   function stateOf(ratio, hunger) {
     const w = ratio < 0.90 ? { k: 'under', t: 'Bajo' } : ratio <= 1.07 ? { k: 'ideal', t: 'Ideal' }
       : ratio <= 1.20 ? { k: 'over', t: 'Sobrepeso' } : { k: 'obese', t: 'Obesidad' };
     return Object.assign({ hungry: hunger >= 0.7 }, w);
   }
+
   function renderTwins(day) {
-    results.forEach(r => {
+    compData.res.forEach(r => {
       const el = document.querySelector(`.twin[data-id="${r.id}"]`);
+      if (!el) return;
       const w = r.weights[day], hunger = day > 0 ? r.hungerNight[day - 1] : 0.4, ratio = w / P.idealW;
       const st = stateOf(ratio, hunger);
       const rx = clamp(50 + (ratio - 1) * 120, 38, 86), ry = clamp(34 + (ratio - 1) * 80, 26, 56);
@@ -593,62 +1524,51 @@ function initUI() {
       el.querySelector('.meta').textContent = `${f(w, 2)} kg`;
     });
     $('dayLabel').textContent = day;
-    renderUtilChart(Math.max(1, day));
-  }
-
-  function renderUtilChart(day) {
-    if (typeof Chart === 'undefined') return;
-    const log = results[2].log.filter(e => e.day === day - 1);
-    const colors = ['#6366f1', '#f59e0b', '#10b981'];
-    const ds = log.map((e, i) => ({
-      label: `${String(e.hour).padStart(2, '0')}:00 (${e.best}g)`, data: e.cands,
-      borderColor: colors[i], backgroundColor: colors[i], showLine: true, borderWidth: 1.8, tension: 0.2,
-      pointRadius: e.cands.map((_, j) => j === e.bestIdx ? 6 : 0),
-      pointStyle: e.cands.map((_, j) => j === e.bestIdx ? 'star' : 'circle')
-    }));
-    $('utilDay').textContent = day;
-    if (utilChart) { utilChart.data.datasets = ds; utilChart.update(); return; }
-    utilChart = new Chart($('utilChart'), {
-      type: 'scatter', data: { datasets: ds },
-      options: {
-        responsive: true, maintainAspectRatio: false, parsing: false,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } },
-        scales: { x: { type: 'linear', title: { display: true, text: 'Gramos (g)', font: { size: 11 } } }, y: { title: { display: true, text: 'U(g)', font: { size: 11 } } } }
-      }
-    });
   }
 
   function renderMC() {
     const mc = monteCarlo(P, 20), ms = (s, d) => `${f(s.m, d)} ± ${f(s.sd, d)}`;
-    $('mcBody').innerHTML = Object.keys(NAMES).map(id => {
-      const s = mc.stats[id];
-      return `<tr><th scope="row">${NAMES[id]}</th><td>${ms(s.score, 1)}</td><td>${ms(s.deviation, 3)}</td><td>${ms(s.waste, 0)}</td><td>${ms(s.episodes, 1)}</td></tr>`;
-    }).join('');
-    $('mcNote').innerHTML = `Utilidad ganó en <b>${mc.wins} de ${mc.n}</b> semillas.`;
+    $('mcBody').innerHTML = Object.values(mc.stats).map(s => `<tr>
+      <th scope="row"><span class="agent-orb" style="background:${s.orb}"></span>${s.name}</th>
+      <td>${ms(s.score, 1)}</td>
+      <td>${ms(s.deviation, 3)}</td>
+      <td>${ms(s.waste, 0)}</td>
+      <td>${ms(s.episodes, 1)}</td>
+      <td>${ms(s.ms, 2)}</td>
+    </tr>`).join('');
+    $('mcNote').innerHTML = `<span class="icon-box" style="width:22px;height:22px;font-size:0.75rem;">✓</span> En 20 semillas Test nuevas, los modelos del Bloque 2 igualaron o superaron al Bloque 1 en <b>${mc.winsB2} de ${mc.n}</b> ejecuciones.`;
     $('mcWrap').hidden = false;
   }
 
-  function runAll() {
+  function runAll(retrain = false) {
     P = readParams();
-    results = runComparison(P);
-    renderTable(results);
-    renderWeightChart(results);
+    if (retrain || !TRAINED.reg) trainBlock2Models(P);
+    compData = runComparison(P);
+    buildTwins(compData.res);
+    renderMLCards(compData);
+    renderTable(compData.res);
+    renderWeightChart(compData.res);
+    renderImitationChart(compData.imitationPairs);
     const dr = $('dayRange'); dr.max = P.days; dr.value = P.days;
     renderTwins(P.days);
     $('mcWrap').hidden = true;
   }
 
-  buildTwins();
   document.querySelectorAll('input').forEach(i => i.addEventListener('input', syncOutputs));
-  $('btnRun').addEventListener('click', runAll);$('btnMC').addEventListener('click', () => { if (!results) runAll(); P = readParams(); renderMC(); });
-  $('btnSeed').addEventListener('click', () => {$('seed').value = Math.floor(Math.random() * 9000) + 1; });
-  $('dayRange').addEventListener('input', e => renderTwins(+e.target.value));$('showNoisy').addEventListener('change', () => results && renderWeightChart(results));
+  $('btnRun').addEventListener('click', () => runAll(false));
+  $('btnTrain').addEventListener('click', () => runAll(true));
+  $('btnMC').addEventListener('click', () => { if (!compData) runAll(false); P = readParams(); renderMC(); });
+  $('btnSeed').addEventListener('click', () => { $('seed').value = Math.floor(Math.random() * 90) + 1; });
+  $('dayRange').addEventListener('input', e => renderTwins(+e.target.value));
+  $('showNoisy').addEventListener('change', () => compData && renderWeightChart(compData.res));
   document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
     const [a, be, g] = b.dataset.preset.split(',');
     $('alpha').value = a; $('beta').value = be; $('gamma').value = g;
-    syncOutputs(); runAll();
+    syncOutputs(); runAll(true);
   }));
-  syncOutputs(); runAll();
+
+  syncOutputs();
+  runAll(true);
 }
 
 if (typeof document !== 'undefined') initUI();
